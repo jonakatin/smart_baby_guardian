@@ -1,0 +1,52 @@
+name: smart_lab_guardian
+description: Smart Lab Guardian — Proximity–Heat risk monitoring over Bluetooth Classic (ESP32 SPP)
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_bloc: ^9.1.1
+  provider: ^6.1.2
+  # Bluetooth Classic SPP
+  flutter_bluetooth_serial: ^0.4.0
+  # Audio & vibration
+  audioplayers: ^6.1.0
+  vibration: ^3.1.4
+  # Storage & sharing
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  path_provider: ^2.1.4
+  share_plus: ^12.0.1
+  # UI
+  google_fonts: ^6.2.1
+
+  # Icons generator
+  flutter_launcher_icons: ^0.14.4
+  intl: ^0.20.2
+  path_provider_platform_interface: ^2.1.2
+  audioplayers_platform_interface: ^7.1.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  hive_generator: ^2.0.1
+  build_runner: ^2.4.12
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/icon.png
+    - assets/sounds/high_alarm.wav
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: assets/icon.png
+  min_sdk_android: 21
+  adaptive_icon_background: "#202A44"
+  adaptive_icon_foreground: assets/icon.png
