@@ -160,7 +160,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const ListTile(title: Text('About')),
           const Card(
             child: ListTile(
-              title: Text('Smart Lab Guardian'),
+              title: Text('Smart Guardian'),
               subtitle: Text(
                 'Version 1.0.0\nSupervisor: Dr. Mary Nsabagwa\nGroup 28: Wambui Mariam, Johnson Makmot Kabira, Mwesigwa Isaac, Bataringaya Bridget, Jonathan Katongole',
               ),

@@ -27,7 +27,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Icon(Icons.shield, size: 96, color: cs.tertiary),
             const SizedBox(height: 16),
             Text(
-              'Smart Lab Guardian',
+              'Smart Guardian',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,

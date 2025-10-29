@@ -1,4 +1,4 @@
-// ✅ Complete Smart Lab Guardian test suite (clean & self-contained)
+// ✅ Complete Smart Guardian test suite (clean & self-contained)
 
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -8,14 +8,14 @@ import 'package:hive/hive.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'package:smart_lab_guardian/main.dart';
-import 'package:smart_lab_guardian/models/sensor_record.dart';
-import 'package:smart_lab_guardian/services/storage_service.dart';
-import 'package:smart_lab_guardian/services/bluetooth_service.dart';
-import 'package:smart_lab_guardian/theme/app_theme.dart';
-import 'package:smart_lab_guardian/utils/alarm_handler.dart';
-import 'package:smart_lab_guardian/screens/dashboard_screen.dart';
-import 'package:smart_lab_guardian/screens/history_screen.dart';
+import 'package:smart_guardian/main.dart';
+import 'package:smart_guardian/models/sensor_record.dart';
+import 'package:smart_guardian/services/storage_service.dart';
+import 'package:smart_guardian/services/bluetooth_service.dart';
+import 'package:smart_guardian/theme/app_theme.dart';
+import 'package:smart_guardian/utils/alarm_handler.dart';
+import 'package:smart_guardian/screens/dashboard_screen.dart';
+import 'package:smart_guardian/screens/history_screen.dart';
 
 class FakePathProvider extends PathProviderPlatform {
   @override
@@ -43,9 +43,9 @@ void main() {
 
   group('1️⃣ App launch & theme tests', () {
     testWidgets('Splash screen loads with correct title', (tester) async {
-      await tester.pumpWidget(const SmartLabGuardianApp());
+      await tester.pumpWidget(const SmartGuardianApp());
       await tester.pump(const Duration(milliseconds: 1500));
-      expect(find.text('Smart Lab Guardian'), findsOneWidget);
+      expect(find.text('Smart Guardian'), findsOneWidget);
     });
 
     test('Color constants and status logic', () {

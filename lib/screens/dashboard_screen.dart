@@ -68,7 +68,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     if (rec == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Smart Lab Guardian')),
+        appBar: AppBar(title: const Text('Smart Guardian')),
         body: const Center(child: Text('Waiting for sensor data...')),
       );
     }
@@ -77,7 +77,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       children: [
         Scaffold(
           appBar: AppBar(
-            title: const Text('Smart Lab Guardian'),
+            title: const Text('Smart Guardian'),
             actions: [
               Padding(
                 padding: const EdgeInsets.only(right: 12.0),
