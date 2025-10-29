@@ -1,10 +1,10 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
-project(smart_lab_guardian_fixed LANGUAGES CXX)
+project(smart_guardian LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "smart_lab_guardian_fixed")
+set(BINARY_NAME "smart_guardian")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
