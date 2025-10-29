@@ -40,8 +40,8 @@ class _GaugePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final stroke = size.shortestSide * 0.08;
     final rect = Offset.zero & size;
-    final start = 3.14; // pi
-    final sweep = 3.14; // 180°
+    const start = 3.14; // pi
+    const sweep = 3.14; // 180°
     final bgPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke

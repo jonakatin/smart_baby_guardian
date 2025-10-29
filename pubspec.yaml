@@ -31,6 +31,7 @@ dependencies:
   audioplayers_platform_interface: ^7.1.1
 
 dev_dependencies:
+  flutter_lints: ^3.0.1
   flutter_test:
     sdk: flutter
   hive_generator: ^2.0.1
