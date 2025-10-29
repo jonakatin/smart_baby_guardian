@@ -6,11 +6,11 @@ plugins {
 
 android {
     namespace = "com.smartguardian.app"
-    compileSdk = 35                     // ✅ use latest stable SDK
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.smartguardian.app"
-        minSdk = 23
+        minSdk = flutter.minSdkVersion
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
