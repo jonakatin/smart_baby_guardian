@@ -1,6 +1,6 @@
 {
-    "name": "smart_lab_guardian_fixed",
-    "short_name": "smart_lab_guardian_fixed",
+    "name": "Smart Guardian",
+    "short_name": "Smart Guardian",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

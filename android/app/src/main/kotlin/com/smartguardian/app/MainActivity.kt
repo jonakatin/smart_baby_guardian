@@ -1,4 +1,4 @@
-package com.example.smart_lab_guardian_fixed
+package com.smartguardian.app
 
 import io.flutter.embedding.android.FlutterActivity
 

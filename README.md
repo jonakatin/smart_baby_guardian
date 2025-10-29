@@ -1,4 +1,4 @@
-# smart_lab_guardian_fixed
+# Smart Guardian
 
 A new Flutter project.
 

@@ -29,16 +29,16 @@ void main() async {
   // Alarm handler init
   await AlarmHandler.instance.init();
 
-  runApp(const SmartLabGuardianApp());
+  runApp(const SmartGuardianApp());
 }
 
-class SmartLabGuardianApp extends StatefulWidget {
-  const SmartLabGuardianApp({super.key});
+class SmartGuardianApp extends StatefulWidget {
+  const SmartGuardianApp({super.key});
   @override
-  State<SmartLabGuardianApp> createState() => _SmartLabGuardianAppState();
+  State<SmartGuardianApp> createState() => _SmartGuardianAppState();
 }
 
-class _SmartLabGuardianAppState extends State<SmartLabGuardianApp> {
+class _SmartGuardianAppState extends State<SmartGuardianApp> {
   ThemeMode _mode = ThemeMode.system;
 
   @override
@@ -59,7 +59,7 @@ class _SmartLabGuardianAppState extends State<SmartLabGuardianApp> {
     return MultiProvider(
       providers: [ChangeNotifierProvider(create: (_) => BluetoothService())],
       child: MaterialApp(
-        title: 'Smart Lab Guardian',
+        title: 'Smart Guardian',
         debugShowCheckedModeBanner: false,
         themeMode: _mode,
         theme: AppTheme.light,

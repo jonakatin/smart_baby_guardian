@@ -1,5 +1,5 @@
-name: smart_lab_guardian
-description: Smart Lab Guardian — Proximity–Heat risk monitoring over Bluetooth Classic (ESP32 SPP)
+name: smart_guardian
+description: "A safety monitoring app for Smart Guardian IoT sensors."
 publish_to: "none"
 version: 1.0.0+1
 
