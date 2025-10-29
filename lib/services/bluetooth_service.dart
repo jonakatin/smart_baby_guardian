@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import '../models/sensor_record.dart';
@@ -98,9 +99,9 @@ class BluetoothService extends ChangeNotifier {
         final temp = 25 + 10 * (0.5 + 0.5 * (now % 7000) / 7000);
         final dist = 10 + 50 * ((now % 9000) / 9000);
         final tilt = (now % 3000) / 100.0; // simulate 0–30°
-        final int risk = ((100 - dist).clamp(0, 100) * 0.4 + (temp - 20) * 3)
-            .toInt()
-            .clamp(0, 100);
+        final double riskScore =
+            (100 - dist).clamp(0, 100) * 0.4 + (temp - 20) * 3;
+        final int risk = riskScore.clamp(0, 100).round();
         final status = AppTheme.statusText(risk);
         final map = {
           "distance": double.parse(dist.toStringAsFixed(1)),
