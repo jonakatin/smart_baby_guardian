@@ -148,8 +148,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     );
                     if (ok == true) {
-                      store.settingsBox.clear();
-                      await store.init();
+                      await store.resetSettings();
                       if (mounted) setState(() {});
                     }
                   },
