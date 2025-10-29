@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:smart_lab_guardian/services/storage_service.dart';
+import 'package:smart_guardian/services/storage_service.dart';
 import '../theme/app_theme.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -129,10 +129,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final csv = rows.join('\n');
 
     final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/smart_lab_guardian_export.csv');
+    final file = File('${dir.path}/smart_guardian_export.csv');
     await file.writeAsString(csv);
     await Share.shareXFiles([
       XFile(file.path),
-    ], text: 'Smart Lab Guardian – CSV Export');
+    ], text: 'Smart Guardian – CSV Export');
   }
 }

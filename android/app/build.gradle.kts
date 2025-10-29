@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.smart_lab_guardian_fixed"
+    namespace = "com.smartguardian.app"
     compileSdk = 35                     // ✅ use latest stable SDK
 
     defaultConfig {
-        applicationId = "com.example.smart_lab_guardian_fixed"
+        applicationId = "com.smartguardian.app"
         minSdk = 23
         targetSdk = 35
         versionCode = 1
