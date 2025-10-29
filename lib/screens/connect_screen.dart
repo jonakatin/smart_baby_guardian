@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/bluetooth_service.dart';
@@ -76,19 +78,19 @@ class _ConnectScreenState extends State<ConnectScreen> {
                     return ListTile(
                       title: Text(d.name ?? d.address),
                       subtitle: Text(d.address),
-                      trailing:
-                          bt.isConnecting && bt.device?.address == d.address
+                      trailing: bt.isConnecting &&
+                              bt.device?.address == d.address
                           ? const SizedBox(
                               width: 24,
                               height: 24,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : (bt.device?.address == d.address && bt.isConnected
-                                ? const Icon(
-                                    Icons.check_circle,
-                                    color: Colors.green,
-                                  )
-                                : const Icon(Icons.link)),
+                              ? const Icon(
+                                  Icons.check_circle,
+                                  color: Colors.green,
+                                )
+                              : const Icon(Icons.link)),
                       onTap: () async {
                         try {
                           await bt.connect(d);

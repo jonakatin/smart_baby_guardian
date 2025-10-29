@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -81,7 +83,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding: const EdgeInsets.only(right: 12.0),
                 child: Chip(
                   label: Text(bt.isConnected ? 'Connected' : 'Offline',
-                      style: TextStyle(color: Colors.white)),
+                      style: const TextStyle(color: Colors.white)),
                   backgroundColor: bt.isConnected ? Colors.green : cs.tertiary,
                 ),
               ),
