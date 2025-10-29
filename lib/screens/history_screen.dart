@@ -120,18 +120,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _exportCsv() async {
-    final rows = StorageService.instance.allDesc.map((r) {
-      return '${r.timestamp.toIso8601String()},${r.distance.toStringAsFixed(2)},${r.temperature.toStringAsFixed(2)},${r.risk},${r.status}';
-    }).toList();
-    rows.insert(0, 'timestamp,distance_cm,temperature_c,tilt_deg,risk,status');
-
-    for (final r in StorageService.instance.allDesc) {
-      rows.add(
-        '${r.timestamp.toIso8601String()},${r.distance.toStringAsFixed(2)},'
-        '${r.temperature.toStringAsFixed(2)},${r.tilt.toStringAsFixed(2)},'
-        '${r.risk},${r.status}',
-      );
-    }
+    final records = StorageService.instance.allDesc;
+    final rows = <String>[
+      'timestamp,distance_cm,temperature_c,tilt_deg,risk,status',
+      for (final r in records)
+        '${r.timestamp.toIso8601String()},${r.distance.toStringAsFixed(2)},${r.temperature.toStringAsFixed(2)},${r.tilt.toStringAsFixed(2)},${r.risk},${r.status}',
+    ];
     final csv = rows.join('\n');
 
     final dir = await getTemporaryDirectory();
