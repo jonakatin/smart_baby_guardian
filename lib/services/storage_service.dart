@@ -14,19 +14,37 @@ class StorageService {
   Stream<void> get settingsStream => _settingsCtrl.stream;
 
   Future<void> init() async {
-    await Hive.deleteBoxFromDisk('records');
     recordsBox = await Hive.openBox<SensorRecord>('records');
     settingsBox = await Hive.openBox('settings');
 
-    // Defaults
-    settingsBox.putIfAbsent('themeMode', () => 'system');
-    settingsBox.putIfAbsent('alarmVolume', () => 1.0);
-    settingsBox.putIfAbsent('vibration', () => true);
-    settingsBox.putIfAbsent('autoAck', () => false);
-    settingsBox.putIfAbsent('autoConnect', () => true);
-    settingsBox.putIfAbsent('updateRateSec', () => 1);
+    _applyDefaultSettings();
 
     settingsBox.watch().listen((_) => _settingsCtrl.add(null));
+  }
+
+  Future<void> resetSettings() async {
+    await settingsBox.clear();
+    _applyDefaultSettings(force: true);
+    _settingsCtrl.add(null);
+  }
+
+  void _applyDefaultSettings({bool force = false}) {
+    final defaults = {
+      'themeMode': 'system',
+      'alarmVolume': 1.0,
+      'vibration': true,
+      'autoAck': false,
+      'autoConnect': true,
+      'updateRateSec': 1,
+    };
+
+    defaults.forEach((key, value) {
+      if (force) {
+        settingsBox.put(key, value);
+      } else {
+        settingsBox.putIfAbsent(key, () => value);
+      }
+    });
   }
 
   ThemeMode get themeMode {
