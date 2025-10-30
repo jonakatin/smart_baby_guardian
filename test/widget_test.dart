@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
@@ -19,6 +18,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Smart Baby Guard'), findsOneWidget);
-    expect(find.textContaining('Connect to your SmartBabyGuard monitor'), findsOneWidget);
+    expect(find.textContaining('Connect to your SmartBabyGuard monitor'),
+        findsOneWidget);
   });
 }
