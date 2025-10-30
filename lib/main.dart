@@ -16,9 +16,21 @@ import 'screens/dashboard_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/settings_screen.dart';
 import 'utils/alarm_handler.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+Future<void> requestPermissions() async {
+  await [
+    Permission.bluetooth,
+    Permission.bluetoothScan,
+    Permission.bluetoothConnect,
+    Permission.locationWhenInUse,
+    Permission.notification, // For Android 13+
+  ].request();
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await requestPermissions();
 
   // Hive setup
   final Directory appDir = await getApplicationDocumentsDirectory();
