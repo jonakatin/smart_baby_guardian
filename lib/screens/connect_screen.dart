@@ -1,116 +1,111 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
+
 import '../services/bluetooth_service.dart';
 
 class ConnectScreen extends StatefulWidget {
   const ConnectScreen({super.key});
+
   @override
   State<ConnectScreen> createState() => _ConnectScreenState();
 }
 
 class _ConnectScreenState extends State<ConnectScreen> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final bt = context.read<BluetoothService>();
-      if (mounted) setState(() {});
-      if (bt.isConnected) {
-        Navigator.of(context).pushReplacementNamed('/main');
+  String? _error;
+
+  Future<void> _connect(BuildContext context) async {
+    final bluetooth = context.read<BluetoothService>();
+    setState(() => _error = null);
+    try {
+      await [
+        Permission.bluetooth,
+        Permission.bluetoothScan,
+        Permission.bluetoothConnect,
+        Permission.locationWhenInUse,
+      ].request();
+      await bluetooth.connectTo();
+      if (bluetooth.isConnected && mounted) {
+        Navigator.of(context).pushReplacementNamed('/dashboard');
       }
-    });
+    } catch (error) {
+      setState(() => _error = 'Unable to connect. Ensure SmartBabyGuard is paired and powered on.');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final bt = context.watch<BluetoothService>();
+    final bluetooth = context.watch<BluetoothService>();
+    final isBusy = bluetooth.isConnecting || bluetooth.isAutoReconnecting;
     return Scaffold(
-      appBar: AppBar(title: const Text('Connect Device')),
-      floatingActionButton: bt.isConnected
-          ? FloatingActionButton.extended(
-              onPressed: () => Navigator.pushReplacementNamed(context, '/main'),
-              label: const Text('Continue'),
-              icon: const Icon(Icons.arrow_forward),
-            )
-          : null,
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                const Icon(Icons.bluetooth, size: 28),
-                const SizedBox(width: 8),
-                Text(
-                  bt.isConnected
-                      ? 'Connected: ${bt.device?.name ?? bt.device?.address}'
-                      : 'Not Connected',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ],
+      appBar: AppBar(title: const Text('Smart Baby Guard')),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
+            Text(
+              'Connect to your SmartBabyGuard monitor to start tracking real-time temperature and distance.',
+              style: Theme.of(context).textTheme.bodyLarge,
             ),
-          ),
-          Expanded(
-            child: FutureBuilder(
-              future: bt.discover(),
-              builder: (context, snap) {
-                final devices = snap.data ?? [];
-                if (snap.connectionState != ConnectionState.done) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (devices.isEmpty) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(24.0),
-                      child: Text(
-                        'No bonded Bluetooth devices.\nPair ESP32 (SPP) in system settings, then reopen.',
-                      ),
+            const SizedBox(height: 32),
+            Card(
+              elevation: 0,
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          bluetooth.isConnected ? Icons.bluetooth_connected : Icons.bluetooth_disabled,
+                          color: bluetooth.isConnected
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.error,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          bluetooth.isConnected ? 'SmartBabyGuard connected' : 'SmartBabyGuard not connected',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ],
                     ),
-                  );
-                }
-                return ListView.separated(
-                  itemCount: devices.length,
-                  separatorBuilder: (_, __) => const Divider(height: 0),
-                  itemBuilder: (_, i) {
-                    final d = devices[i];
-                    return ListTile(
-                      title: Text(d.name ?? d.address),
-                      subtitle: Text(d.address),
-                      trailing: bt.isConnecting &&
-                              bt.device?.address == d.address
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : (bt.device?.address == d.address && bt.isConnected
-                              ? const Icon(
-                                  Icons.check_circle,
-                                  color: Colors.green,
-                                )
-                              : const Icon(Icons.link)),
-                      onTap: () async {
-                        try {
-                          await bt.connect(d);
-                          if (mounted) {
-                            Navigator.pushReplacementNamed(context, '/main');
-                          }
-                        } catch (e) {
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Connect failed: $e')),
-                          );
-                        }
-                      },
-                    );
-                  },
-                );
-              },
+                    const SizedBox(height: 16),
+                    if (_error != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Text(
+                          _error!,
+                          style: TextStyle(color: Theme.of(context).colorScheme.error),
+                        ),
+                      ),
+                    FilledButton.icon(
+                      onPressed: isBusy
+                          ? null
+                          : () {
+                              if (bluetooth.isConnected) {
+                                Navigator.of(context).pushReplacementNamed('/dashboard');
+                              } else {
+                                _connect(context);
+                              }
+                            },
+                      icon: Icon(bluetooth.isConnected ? Icons.dashboard : Icons.bluetooth_searching),
+                      label: Text(bluetooth.isConnected ? 'Go to Dashboard' : 'Connect to SmartBabyGuard'),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ],
+            const Spacer(),
+            Text(
+              'Tip: Pair the SmartBabyGuard device from Bluetooth settings before using the app.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
       ),
     );
   }
