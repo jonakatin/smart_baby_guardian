@@ -153,7 +153,7 @@ class SettingsScreen extends StatelessWidget {
             child: const ListTile(
               title: Text('Smart Baby Guard'),
               subtitle: Text(
-                'Version 1.0.0\n'
+                'Version 2.1.0\n'
                 'Supervisor: Dr. Mary Nsabagwa\n'
                 'Group 28: Wambui Mariam, Johnson Makmot Kabira, Mwesigwa Isaac, '
                 'Bataringaya Bridget, Jonathan Katongole',

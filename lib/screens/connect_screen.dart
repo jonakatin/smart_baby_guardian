@@ -170,7 +170,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'Smart Lab Guardian – Supervisor: Dr. Mary Nsabagwa\nGroup 28: Wambui Mariam, Johnson Makmot Kabira, Mwesigwa Isaac, Bataringaya Bridget, Jonathan Katongole',
+              'Smart Baby Guardian – Supervisor: Dr. Mary Nsabagwa\nGroup 28: Wambui Mariam, Johnson Makmot Kabira, Mwesigwa Isaac, Bataringaya Bridget, Jonathan Katongole',
               style: Theme.of(context).textTheme.bodySmall,
               textAlign: TextAlign.center,
             ),
