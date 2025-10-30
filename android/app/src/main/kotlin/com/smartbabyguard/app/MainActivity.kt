@@ -1,4 +1,4 @@
-package com.smartguardian.app
+package com.smartbabyguard.app
 
 import io.flutter.embedding.android.FlutterActivity
 

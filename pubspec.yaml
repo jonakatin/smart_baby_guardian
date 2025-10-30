@@ -1,5 +1,5 @@
-name: smart_guardian
-description: "A safety monitoring app for Smart Guardian IoT sensors."
+name: smart_baby_guard
+description: "Smart Baby Guard companion app"
 publish_to: "none"
 version: 1.0.0+1
 
@@ -9,39 +9,24 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_blue_plus: ^2.0.0
-  flutter_bloc: ^9.1.1
   provider: ^6.1.2
-  # Bluetooth Classic SPP
   flutter_bluetooth_serial: ^0.4.0
-  # Audio & vibration
-  audioplayers: ^6.1.0
-  vibration: ^3.1.4
-  # Storage & sharing
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  path_provider: ^2.1.4
-  share_plus: ^12.0.1
-  # UI
-  google_fonts: ^6.2.1
-
-  # Icons generator
-  flutter_launcher_icons: ^0.14.4
+  audioplayers: ^6.1.0
+  vibration: ^3.1.4
   intl: ^0.20.2
-  path_provider_platform_interface: ^2.1.2
-  audioplayers_platform_interface: ^7.1.1
+  torch_light: ^1.0.0
   permission_handler: ^12.0.1
 
 dev_dependencies:
   flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
-  hive_generator: ^2.0.1
-  build_runner: ^2.4.12
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
-
   assets:
     - assets/icon/icon.png
     - assets/sounds/high_alarm.wav
@@ -50,6 +35,6 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: assets/icon/icon.png
-  min_sdk_android: 21
+  min_sdk_android: 23
   adaptive_icon_background: "#1A237E"
   adaptive_icon_foreground: assets/icon/icon.png
