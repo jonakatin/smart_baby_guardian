@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
-
 import 'screens/connect_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/history_screen.dart';
@@ -31,11 +30,13 @@ class SmartBabyGuardApp extends StatelessWidget {
         themeMode: ThemeMode.system,
         theme: ThemeData(
           useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent, brightness: Brightness.light),
+          colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.blueAccent, brightness: Brightness.light),
         ),
         darkTheme: ThemeData(
           useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent, brightness: Brightness.dark),
+          colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.blueAccent, brightness: Brightness.dark),
         ),
         routes: {
           '/': (context) => const ConnectScreen(),

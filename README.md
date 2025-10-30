@@ -34,32 +34,31 @@ Features
 
 Installation & Setup
 1️⃣ Clone the Repository:
-   git clone https://github.com/<your-username>/smart_baby_guard.git
-   cd smart_baby_guard
+https://github.com/jonakatin/smart_guardian.git
 
 2️⃣ Configure Flutter SDK:
-   flutter config --flutter-root "C:\src\flutter"
-   or add flutter.sdk path in android/local.properties
+flutter config --flutter-root "C:\src\flutter"
+or add flutter.sdk path in android/local.properties
 
 3️⃣ Verify Environment:
-   flutter doctor -v
+flutter doctor -v
 
 4️⃣ Fetch Dependencies:
-   flutter pub get
+flutter pub get
 
 5️⃣ Build the App:
-   flutter clean
-   flutter build apk --release
+flutter clean
+flutter build apk --release
 
 6️⃣ Run on Device (Debug):
-   flutter run
+flutter run
 
 Team Members — Makerere University CoCIS BSSE 3 (Group 28)
-Wambui Mariam 23/U/18494/PS UI Design
-Johnson Makmot Kabira 23/U/26794/EVE IoT Integration
-Mwesigwa Isaac 23/U/12539/PS Firmware & Testing
-Bataringaya Bridget 23/U/07471/EVE Documentation & QA
-Jonathan Katongole 23/U/27072/EVE Lead Developer / App Engineer
+Wambui Mariam 23/U/###94/PS UI Design
+Johnson Makmot Kabira 23/U/###94/EVE IoT Integration
+Mwesigwa Isaac 23/U/###39/PS Firmware & Testing
+Bataringaya Bridget 23/U/###71/EVE Documentation & QA
+Jonathan Katongole 23/U/###72/EVE App Engineer
 
 Supervisor
 Dr. Mary Nsabagwa
