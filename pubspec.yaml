@@ -43,7 +43,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/icon.png
+    - assets/icon/icon.png
     - assets/sounds/high_alarm.wav
 
 flutter_launcher_icons:
