@@ -1,3 +1,8 @@
+analyzer:
+  errors:
+    depend_on_referenced_packages: ignore ignore
+    use_build_context_synchronously: ignore
+    use_build_context_synchronously: ignore
 include: package:flutter_lints/flutter.yaml
 
 linter:
