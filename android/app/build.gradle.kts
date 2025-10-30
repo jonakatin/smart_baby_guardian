@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.smartbabyguard.app"
-    compileSdk = 35
+    compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
