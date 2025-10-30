@@ -14,7 +14,7 @@ class ConnectScreen extends StatefulWidget {
 class _ConnectScreenState extends State<ConnectScreen> {
   String? _error;
 
-  Future<void> _connect(BuildContext context) async {
+  Future<void> _connect() async {
     final bluetooth = context.read<BluetoothService>();
     setState(() => _error = null);
     try {
@@ -25,10 +25,16 @@ class _ConnectScreenState extends State<ConnectScreen> {
         Permission.locationWhenInUse,
       ].request();
       await bluetooth.connectTo();
-      if (bluetooth.isConnected && mounted) {
+      if (!mounted) {
+        return;
+      }
+      if (bluetooth.isConnected) {
         Navigator.of(context).pushReplacementNamed('/dashboard');
       }
     } catch (error) {
+      if (!mounted) {
+        return;
+      }
       setState(() => _error = 'Unable to connect. Ensure SmartBabyGuard is paired and powered on.');
     }
   }
@@ -87,9 +93,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
                           ? null
                           : () {
                               if (bluetooth.isConnected) {
-                                Navigator.of(context).pushReplacementNamed('/dashboard');
+                                Navigator.of(context)
+                                    .pushReplacementNamed('/dashboard');
                               } else {
-                                _connect(context);
+                                _connect();
                               }
                             },
                       icon: Icon(bluetooth.isConnected ? Icons.dashboard : Icons.bluetooth_searching),
