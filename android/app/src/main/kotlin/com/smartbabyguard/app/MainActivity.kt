@@ -84,6 +84,10 @@ class MainActivity : FlutterActivity() {
                     permissions += Manifest.permission.ACCESS_FINE_LOCATION
                     permissions += Manifest.permission.ACCESS_COARSE_LOCATION
                 }
+
+                "camera" -> {
+                    permissions += Manifest.permission.CAMERA
+                }
             }
         }
         return permissions
