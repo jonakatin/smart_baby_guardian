@@ -50,9 +50,14 @@ class _ConnectScreenState extends State<ConnectScreen> {
         Navigator.pushReplacementNamed(context, '/dashboard');
       }
     } catch (error) {
+      debugPrint('Bluetooth connection failed: $error');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Connect failed: $error')),
+        const SnackBar(
+          content: Text(
+            'Unable to connect. Please ensure the device is powered on and nearby, then try again.',
+          ),
+        ),
       );
     }
   }
