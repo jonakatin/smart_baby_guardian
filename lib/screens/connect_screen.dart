@@ -29,7 +29,8 @@ class _ConnectScreenState extends State<ConnectScreen> {
         Navigator.of(context).pushReplacementNamed('/dashboard');
       }
     } catch (error) {
-      setState(() => _error = 'Unable to connect. Ensure SmartBabyGuard is paired and powered on.');
+      setState(() => _error =
+          'Unable to connect. Ensure SmartBabyGuard is paired and powered on.');
     }
   }
 
@@ -61,14 +62,18 @@ class _ConnectScreenState extends State<ConnectScreen> {
                     Row(
                       children: [
                         Icon(
-                          bluetooth.isConnected ? Icons.bluetooth_connected : Icons.bluetooth_disabled,
+                          bluetooth.isConnected
+                              ? Icons.bluetooth_connected
+                              : Icons.bluetooth_disabled,
                           color: bluetooth.isConnected
                               ? Theme.of(context).colorScheme.primary
                               : Theme.of(context).colorScheme.error,
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          bluetooth.isConnected ? 'SmartBabyGuard connected' : 'SmartBabyGuard not connected',
+                          bluetooth.isConnected
+                              ? 'SmartBabyGuard connected'
+                              : 'SmartBabyGuard not connected',
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                       ],
@@ -79,7 +84,8 @@ class _ConnectScreenState extends State<ConnectScreen> {
                         padding: const EdgeInsets.only(bottom: 16),
                         child: Text(
                           _error!,
-                          style: TextStyle(color: Theme.of(context).colorScheme.error),
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.error),
                         ),
                       ),
                     FilledButton.icon(
@@ -87,13 +93,18 @@ class _ConnectScreenState extends State<ConnectScreen> {
                           ? null
                           : () {
                               if (bluetooth.isConnected) {
-                                Navigator.of(context).pushReplacementNamed('/dashboard');
+                                Navigator.of(context)
+                                    .pushReplacementNamed('/dashboard');
                               } else {
                                 _connect(context);
                               }
                             },
-                      icon: Icon(bluetooth.isConnected ? Icons.dashboard : Icons.bluetooth_searching),
-                      label: Text(bluetooth.isConnected ? 'Go to Dashboard' : 'Connect to SmartBabyGuard'),
+                      icon: Icon(bluetooth.isConnected
+                          ? Icons.dashboard
+                          : Icons.bluetooth_searching),
+                      label: Text(bluetooth.isConnected
+                          ? 'Go to Dashboard'
+                          : 'Connect to SmartBabyGuard'),
                     ),
                   ],
                 ),

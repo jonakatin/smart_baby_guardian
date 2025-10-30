@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
-import 'package:smart_baby_guard/main.dart';
-import 'package:smart_baby_guard/services/alert_service.dart';
-import 'package:smart_baby_guard/services/bluetooth_service.dart';
+import '../lib/main.dart';
+import '../lib/services/alert_service.dart';
+
+// Stub BluetoothService for widget tests (original package file not present)
+class BluetoothService extends ChangeNotifier {
+  BluetoothService();
+}
 
 void main() {
   testWidgets('Smart Baby Guard launches connect screen', (tester) async {
@@ -19,6 +23,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Smart Baby Guard'), findsOneWidget);
-    expect(find.textContaining('Connect to your SmartBabyGuard monitor'), findsOneWidget);
+    expect(find.textContaining('Connect to your SmartBabyGuard monitor'),
+        findsOneWidget);
   });
 }
