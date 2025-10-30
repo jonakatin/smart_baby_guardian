@@ -60,7 +60,6 @@ Output: build/app/outputs/flutter-apk/app-release.apk
 flutter run
 
 Team Members — Makerere University CoCIS BSSE 3(Group 28)
-Name Registration Number Role
 Wambui Mariam 23/U/###94/PS Project Coordinator / QA
 Johnson Makmot Kabira 23/U/###94/EVE Embedded Systems Engineer
 Mwesigwa Isaac 23/U/###39/PS Mobile App Developer
