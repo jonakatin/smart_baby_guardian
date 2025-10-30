@@ -1,7 +1,5 @@
-import 'package:flutter/foundation.dart' show ValueChanged;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../services/alert_service.dart';
 import '../services/bluetooth_service.dart';
 import '../services/storage_service.dart';
@@ -116,7 +114,8 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 if (bluetooth.isConnected)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: FilledButton.icon(
                       onPressed: bluetooth.disconnect,
                       icon: const Icon(Icons.link_off),
@@ -194,7 +193,8 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Reset settings?'),
-        content: const Text('This will reset theme, alerts, and Bluetooth preferences.'),
+        content: const Text(
+            'This will reset theme, alerts, and Bluetooth preferences.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
