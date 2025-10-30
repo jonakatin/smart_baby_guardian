@@ -5,6 +5,11 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   audioplayers_windows
   permission_handler_windows
+<<<<<<< HEAD
+=======
+  share_plus
+  url_launcher_windows
+>>>>>>> 4ad3876e6bc5a6194832929fb87acb974b9ff17e
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
 import 'package:vibration/vibration.dart';
 import '../models/reading.dart';
 
@@ -13,6 +14,12 @@ class TorchLight {
   static Future<void> enableTorch() async {}
   static Future<void> disableTorch() async {}
 }
+=======
+import 'package:torch_light/torch_light.dart';
+import 'package:vibration/vibration.dart';
+
+import '../models/reading.dart';
+>>>>>>> 4ad3876e6bc5a6194832929fb87acb974b9ff17e
 
 class AlertService extends ChangeNotifier {
   AlertService();
@@ -113,7 +120,11 @@ class AlertService extends ChangeNotifier {
     _vibrationTimer?.cancel();
     _vibrationTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
       if (_vibrateEnabled) {
+<<<<<<< HEAD
         final hasVibrator = await Vibration.hasVibrator();
+=======
+        final hasVibrator = await Vibration.hasVibrator() ?? false;
+>>>>>>> 4ad3876e6bc5a6194832929fb87acb974b9ff17e
         if (hasVibrator) {
           Vibration.vibrate(pattern: const [0, 300, 200, 300]);
         }
