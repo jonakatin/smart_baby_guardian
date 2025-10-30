@@ -1,9 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-<<<<<<< HEAD
-=======
 import 'dart:typed_data';
->>>>>>> 4ad3876e6bc5a6194832929fb87acb974b9ff17e
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
@@ -20,12 +17,7 @@ class BluetoothService extends ChangeNotifier {
   BluetoothConnection? _connection;
   BluetoothDevice? _device;
 
-<<<<<<< HEAD
-  final StreamController<Reading> _dataController =
-      StreamController.broadcast();
-=======
   final StreamController<Reading> _dataController = StreamController.broadcast();
->>>>>>> 4ad3876e6bc5a6194832929fb87acb974b9ff17e
   StreamSubscription<Uint8List>? _inputSubscription;
   String _incomingBuffer = '';
 
@@ -97,15 +89,8 @@ class BluetoothService extends ChangeNotifier {
       if (parts.length >= 2) {
         final tempPart = parts[0];
         final distPart = parts[1];
-<<<<<<< HEAD
-        final temp =
-            double.tryParse(tempPart.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
-        final dist =
-            double.tryParse(distPart.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
-=======
         final temp = double.tryParse(tempPart.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
         final dist = double.tryParse(distPart.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
->>>>>>> 4ad3876e6bc5a6194832929fb87acb974b9ff17e
         if (temp > 0 && dist > 0) {
           _onNewReading(temp, dist);
         }
@@ -204,13 +189,7 @@ class BluetoothService extends ChangeNotifier {
       handleBluetoothData(message);
       processedIndex = match.end;
     }
-<<<<<<< HEAD
-    _incomingBuffer = _incomingBuffer
-        .substring(processedIndex)
-        .replaceFirst(RegExp(r'^[\r\n]+'), '');
-=======
     _incomingBuffer =
         _incomingBuffer.substring(processedIndex).replaceFirst(RegExp(r'^[\r\n]+'), '');
->>>>>>> 4ad3876e6bc5a6194832929fb87acb974b9ff17e
   }
 }
