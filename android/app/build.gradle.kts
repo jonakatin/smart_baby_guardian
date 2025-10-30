@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.first_app"
+    namespace = "com.smartguardian.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -19,7 +19,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.first_app"
+        applicationId = "com.smartguardian.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
