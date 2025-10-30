@@ -34,7 +34,7 @@ Features
 
 Installation & Setup
 1️⃣ Clone the Repository:
-https://github.com/jonakatin/smart_guardian.git
+https://github.com/jonakatin/smart_baby_guardian.git
 
 2️⃣ Configure Flutter SDK:
 flutter config --flutter-root "C:\src\flutter"
