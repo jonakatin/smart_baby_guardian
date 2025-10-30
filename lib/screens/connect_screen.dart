@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-
 import '../services/bluetooth_service.dart';
 
 class ConnectScreen extends StatefulWidget {
@@ -147,11 +146,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : isSelected && bluetooth.isConnected
-                              ? const Icon(Icons.check_circle, color: Colors.green)
+                              ? const Icon(Icons.check_circle,
+                                  color: Colors.green)
                               : const Icon(Icons.link),
-                      onTap: isBusy
-                          ? null
-                          : () => _connectToDevice(device),
+                      onTap: isBusy ? null : () => _connectToDevice(device),
                     );
                   },
                 );
