@@ -15,7 +15,7 @@ class AlarmHandler {
   Future<void> startAlarm({double volume = 1.0, bool vibrate = true}) async {
     await _player.setVolume(volume.clamp(0.0, 1.0));
     await _player.play(AssetSource('sounds/high_alarm.wav'));
-    if (vibrate && (await Vibration.hasVibrator() ?? false)) {
+    if (vibrate && (await Vibration.hasVibrator())) {
       Vibration.vibrate(
         pattern: const [300, 200, 300, 200],
         intensities: const [128, 0, 128, 0],
@@ -30,7 +30,7 @@ class AlarmHandler {
 
   Future<void> stopAlarm() async {
     await _player.stop();
-    if (await Vibration.hasVibrator() ?? false) {
+    if (await Vibration.hasVibrator()) {
       Vibration.cancel();
     }
   }

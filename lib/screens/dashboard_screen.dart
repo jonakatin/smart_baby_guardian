@@ -71,9 +71,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             final DateTime? timestamp = reading?.timestamp;
 
             final bool dangerTemp = temperature >= 38.5;
-            final bool cautionTemp = temperature >= 37.5;
-            final bool dangerDistance = distance <= 10;
-            final bool cautionDistance = distance <= 15;
 
 <<<<<<< HEAD
               return SingleChildScrollView(
@@ -530,6 +527,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
+// ignore: unused_element
 class _AlertToggle extends StatelessWidget {
   const _AlertToggle({
     required this.label,

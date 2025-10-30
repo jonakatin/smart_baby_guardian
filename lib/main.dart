@@ -4,11 +4,9 @@ import 'package:provider/provider.dart';
 import 'screens/connect_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/history_screen.dart';
-import 'screens/settings_screen.dart';
 import 'services/alert_service.dart';
 import 'services/bluetooth_service.dart';
 import 'services/storage_service.dart';
-import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
