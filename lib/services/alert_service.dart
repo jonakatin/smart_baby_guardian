@@ -2,10 +2,17 @@ import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-import 'package:torch_light/torch_light.dart';
 import 'package:vibration/vibration.dart';
-
 import '../models/reading.dart';
+
+/// torch_light package not available; provide a minimal stub so code compiles.
+/// This stub disables torch functionality — replace with the real package
+/// or platform-specific implementation if you need flashlight support.
+class TorchLight {
+  static Future<bool> isTorchAvailable() async => false;
+  static Future<void> enableTorch() async {}
+  static Future<void> disableTorch() async {}
+}
 
 class AlertService extends ChangeNotifier {
   AlertService();
@@ -106,7 +113,7 @@ class AlertService extends ChangeNotifier {
     _vibrationTimer?.cancel();
     _vibrationTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
       if (_vibrateEnabled) {
-        final hasVibrator = await Vibration.hasVibrator() ?? false;
+        final hasVibrator = await Vibration.hasVibrator();
         if (hasVibrator) {
           Vibration.vibrate(pattern: const [0, 300, 200, 300]);
         }
