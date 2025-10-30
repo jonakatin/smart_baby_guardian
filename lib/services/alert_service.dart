@@ -4,13 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:torch_light/torch_light.dart';
 
 import '../models/reading.dart';
-import 'alarm_handler.dart';
 import 'storage_service.dart';
 
 class AlertService extends ChangeNotifier {
   AlertService() {
     _loadFromStorage();
-    unawaited(_alarmHandler.init());
   }
 
   final AlarmHandler _alarmHandler = AlarmHandler.instance;
@@ -56,7 +54,14 @@ class AlertService extends ChangeNotifier {
       return;
     }
     _alertActive = true;
-    await _updateAlarmOutputs();
+    if (_soundEnabled) {
+      try {
+        await _player.play(
+          AssetSource('sounds/high_alarm.wav'),
+          volume: _volume,
+        );
+      } catch (_) {}
+    }
     if (_flashEnabled) {
       await _toggleTorch(true);
     }
@@ -76,7 +81,11 @@ class AlertService extends ChangeNotifier {
   void setSoundEnabled(bool value) {
     _soundEnabled = value;
     _storage.soundAlerts = value;
-    unawaited(_updateAlarmOutputs());
+    if (!value) {
+      _player.stop();
+    } else if (_alertActive) {
+      unawaited(_player.play(AssetSource('sounds/high_alarm.wav'), volume: _volume));
+    }
     notifyListeners();
   }
 
@@ -94,7 +103,11 @@ class AlertService extends ChangeNotifier {
   void setVibrateEnabled(bool value) {
     _vibrateEnabled = value;
     _storage.vibrateAlerts = value;
-    unawaited(_updateAlarmOutputs());
+    if (!value) {
+      _stopVibration();
+    } else if (_alertActive) {
+      _startVibration();
+    }
     notifyListeners();
   }
 
@@ -102,9 +115,39 @@ class AlertService extends ChangeNotifier {
     _volume = value.clamp(0, 1).toDouble();
     _storage.alarmVolume = _volume;
     if (_alertActive && _soundEnabled) {
-      unawaited(_alarmHandler.updateVolume(_volume));
+      unawaited(_player.setVolume(_volume));
     }
     notifyListeners();
+  }
+
+  void reloadFromStorage() {
+    _loadFromStorage();
+    if (_alertActive) {
+      if (_soundEnabled) {
+        unawaited(_player.setVolume(_volume));
+      } else {
+        unawaited(_player.stop());
+      }
+      if (_flashEnabled) {
+        unawaited(_toggleTorch(true));
+      } else {
+        unawaited(_toggleTorch(false));
+      }
+      if (_vibrateEnabled) {
+        _startVibration();
+      } else {
+        _stopVibration();
+      }
+    }
+    notifyListeners();
+  }
+
+  Future<void> disposeAlert() async {
+    try {
+      await _player.dispose();
+    } catch (_) {}
+    _stopVibration();
+    await _toggleTorch(false);
   }
 
   void reloadFromStorage() {
@@ -142,26 +185,6 @@ class AlertService extends ChangeNotifier {
   void dispose() {
     unawaited(disposeAlert());
     super.dispose();
-  }
-
-  Future<void> _updateAlarmOutputs() async {
-    if (!_alertActive) {
-      return;
-    }
-    if (_soundEnabled || _vibrateEnabled) {
-      await _alarmHandler.startAlarm(
-        volume: _soundEnabled ? _volume : 0,
-        vibrate: _vibrateEnabled,
-      );
-    } else {
-      await _alarmHandler.stopAlarm();
-    }
-  }
-
-  void acknowledgeAlert({Duration snooze = const Duration(seconds: 20)}) {
-    _acknowledgedUntil = DateTime.now().add(snooze);
-    unawaited(_stopAlert());
-    notifyListeners();
   }
 
   void _loadFromStorage() {
