@@ -1,4 +1,4 @@
-import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/services.dart';
 import 'package:vibration/vibration.dart';
 
 class AlarmHandler {
@@ -6,15 +6,32 @@ class AlarmHandler {
 
   static final AlarmHandler instance = AlarmHandler._();
 
-  final AudioPlayer _player = AudioPlayer();
+  static const MethodChannel _channel = MethodChannel('com.smartbabyguard/alarm');
+  static const String _alarmAsset = 'sounds/high_alarm.wav';
+  bool _initialized = false;
 
   Future<void> init() async {
-    await _player.setReleaseMode(ReleaseMode.loop);
+    if (_initialized) {
+      return;
+    }
+    try {
+      await _channel.invokeMethod('initialize', <String, Object>{'asset': _alarmAsset});
+      _initialized = true;
+    } on PlatformException {
+      // Ignore and rely on best-effort behaviour on unsupported platforms.
+    }
   }
 
   Future<void> startAlarm({double volume = 1.0, bool vibrate = true}) async {
-    await _player.setVolume(volume.clamp(0.0, 1.0));
-    await _player.play(AssetSource('sounds/high_alarm.wav'));
+    final double clamped = volume.clamp(0.0, 1.0);
+    try {
+      await _channel.invokeMethod('start', <String, Object>{
+        'asset': _alarmAsset,
+        'volume': clamped,
+      });
+    } on PlatformException {
+      // Ignore failures to keep the alarm workflow responsive.
+    }
     if (vibrate && (await Vibration.hasVibrator())) {
       Vibration.vibrate(
         pattern: const [300, 200, 300, 200],
@@ -25,11 +42,20 @@ class AlarmHandler {
   }
 
   Future<void> updateVolume(double volume) async {
-    await _player.setVolume(volume.clamp(0.0, 1.0));
+    final double clamped = volume.clamp(0.0, 1.0);
+    try {
+      await _channel.invokeMethod('setVolume', <String, Object>{'volume': clamped});
+    } on PlatformException {
+      // No-op on unsupported platforms.
+    }
   }
 
   Future<void> stopAlarm() async {
-    await _player.stop();
+    try {
+      await _channel.invokeMethod('stop');
+    } on PlatformException {
+      // Ignore failures.
+    }
     if (await Vibration.hasVibrator()) {
       Vibration.cancel();
     }
@@ -37,6 +63,10 @@ class AlarmHandler {
 
   Future<void> dispose() async {
     await stopAlarm();
-    await _player.dispose();
+    try {
+      await _channel.invokeMethod('dispose');
+    } on PlatformException {
+      // Ignored.
+    }
   }
 }
