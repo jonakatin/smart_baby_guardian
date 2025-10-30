@@ -1,11 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:torch_light/torch_light.dart';
 
 import '../models/reading.dart';
 import 'alarm_handler.dart';
+import 'permission_service.dart';
 import 'storage_service.dart';
+import 'torch_service.dart';
 
 class AlertService extends ChangeNotifier {
   AlertService() {
@@ -15,6 +16,7 @@ class AlertService extends ChangeNotifier {
 
   final AlarmHandler _alarmHandler = AlarmHandler.instance;
   final StorageService _storage = StorageService.instance;
+  final TorchService _torchService = TorchService.instance;
 
   bool _alertActive = false;
   DateTime? _acknowledgedUntil;
@@ -164,13 +166,17 @@ class AlertService extends ChangeNotifier {
 
   Future<void> _toggleTorch(bool enable) async {
     try {
-      if (!await TorchLight.isTorchAvailable()) {
+      if (!await _torchService.isTorchAvailable()) {
         return;
       }
       if (enable) {
-        await TorchLight.enableTorch();
+        final bool granted = await PermissionService.requestCameraPermission();
+        if (!granted) {
+          return;
+        }
+        await _torchService.enableTorch();
       } else {
-        await TorchLight.disableTorch();
+        await _torchService.disableTorch();
       }
     } catch (_) {}
   }
