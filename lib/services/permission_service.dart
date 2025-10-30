@@ -12,11 +12,29 @@ class PermissionService {
     'locationWhenInUse',
   ];
 
+  static const List<String> _cameraPermissionKeys = <String>[
+    'camera',
+  ];
+
   static Future<bool> requestBluetoothPermissions() async {
     try {
       final bool? granted = await _channel.invokeMethod<bool>(
         'request',
         <String, Object>{'permissions': _bluetoothPermissionKeys},
+      );
+      return granted ?? false;
+    } on PlatformException catch (error, stackTrace) {
+      debugPrint('Permission request failed: ${error.message}');
+      debugPrintStack(stackTrace: stackTrace);
+      return false;
+    }
+  }
+
+  static Future<bool> requestCameraPermission() async {
+    try {
+      final bool? granted = await _channel.invokeMethod<bool>(
+        'request',
+        <String, Object>{'permissions': _cameraPermissionKeys},
       );
       return granted ?? false;
     } on PlatformException catch (error, stackTrace) {
