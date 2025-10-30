@@ -1,127 +1,195 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
-import '../models/sensor_record.dart';
-import '../theme/app_theme.dart';
+
+import '../models/reading.dart';
 import 'storage_service.dart';
 
 class BluetoothService extends ChangeNotifier {
+  BluetoothService();
+
+  static const String targetDeviceName = 'SmartBabyGuard';
+
   final FlutterBluetoothSerial _bluetooth = FlutterBluetoothSerial.instance;
   BluetoothConnection? _connection;
   BluetoothDevice? _device;
-  bool _connecting = false;
-  bool _acknowledged = false;
-  Timer? _simTimer;
 
-  final StreamController<SensorRecord> _dataCtrl = StreamController.broadcast();
-  Stream<SensorRecord> get dataStream => _dataCtrl.stream;
+  final StreamController<Reading> _dataController = StreamController.broadcast();
+  StreamSubscription<Uint8List>? _inputSubscription;
+  String _incomingBuffer = '';
 
+  Reading? _latestReading;
+  String? _bannerMessage;
+  bool _isConnecting = false;
+  bool _autoReconnecting = false;
+  bool _manualDisconnect = false;
+
+  Stream<Reading> get readingsStream => _dataController.stream;
+  Reading? get latestReading => _latestReading;
   BluetoothDevice? get device => _device;
   bool get isConnected => _connection?.isConnected ?? false;
-  bool get isConnecting => _connecting;
-  bool get acknowledged => _acknowledged;
-
-  void setAcknowledged(bool v) {
-    _acknowledged = v;
-    notifyListeners();
-  }
+  bool get isConnecting => _isConnecting;
+  bool get isAutoReconnecting => _autoReconnecting;
+  String? get bannerMessage => _bannerMessage;
 
   Future<void> ensureOn() async {
-    if (!(await _bluetooth.isEnabled ?? false)) {
+    final enabled = await _bluetooth.isEnabled ?? false;
+    if (!enabled) {
       await _bluetooth.requestEnable();
     }
   }
 
-  Future<List<BluetoothDevice>> discover() async {
-    await ensureOn();
-    return await _bluetooth.getBondedDevices();
-  }
-
-  Future<void> connect(BluetoothDevice device) async {
-    await ensureOn();
-    _connecting = true;
+  Future<void> connectTo([String deviceName = targetDeviceName]) async {
+    if (_isConnecting) {
+      return;
+    }
+    _manualDisconnect = false;
+    _isConnecting = true;
+    _bannerMessage = null;
     notifyListeners();
     try {
+      await ensureOn();
+      final devices = await _bluetooth.getBondedDevices();
+      final BluetoothDevice device = devices.firstWhere(
+        (d) => d.name == deviceName,
+        orElse: () => throw Exception('Device not paired'),
+      );
+      final connection = await BluetoothConnection.toAddress(device.address);
       _device = device;
-      _connection = await BluetoothConnection.toAddress(device.address);
-      _connecting = false;
+      _connection = connection;
+      _isConnecting = false;
+      _autoReconnecting = false;
+      _bannerMessage = null;
       notifyListeners();
       _listenToIncoming();
-    } catch (e) {
-      _connecting = false;
+    } catch (error) {
+      _isConnecting = false;
+      _connection = null;
+      _device = null;
+      _bannerMessage = 'Disconnected – Tap to Reconnect';
       notifyListeners();
       rethrow;
     }
   }
 
   void _listenToIncoming() {
-    _connection?.input?.listen((Uint8List data) async {
-      final text = utf8.decode(data);
-      for (final line in const LineSplitter().convert(text)) {
-        try {
-          final map = jsonDecode(line) as Map<String, dynamic>;
-          _handleJson(map);
-        } catch (_) {}
+    _inputSubscription?.cancel();
+    _inputSubscription = _connection?.input?.listen((Uint8List data) {
+      _incomingBuffer += utf8.decode(data);
+      _processIncomingBuffer();
+    }, onDone: _handleDisconnected, onError: (_) => _handleDisconnected());
+  }
+
+  void handleBluetoothData(String data) {
+    if (data.contains('TEMP:') && data.contains('DIST:')) {
+      final parts = data.split(',');
+      if (parts.length >= 2) {
+        final tempPart = parts[0];
+        final distPart = parts[1];
+        final temp = double.tryParse(tempPart.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
+        final dist = double.tryParse(distPart.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
+        if (temp > 0 && dist > 0) {
+          _onNewReading(temp, dist);
+        }
       }
-    }).onDone(() {
-      _connection = null;
-      notifyListeners();
-      if (kDebugMode) _startSimulator();
-    });
-
-    if (kDebugMode && !isConnected) _startSimulator();
+    }
   }
 
-  void _handleJson(Map<String, dynamic> map) async {
-    final rec = SensorRecord.fromJson(map);
-    await StorageService.instance.addRecord(rec);
-    _dataCtrl.add(rec);
-  }
-
-  Future<void> disconnect() async {
-    _simTimer?.cancel();
-    _simTimer = null;
-    await _connection?.finish();
-    _connection = null;
-    _device = null;
+  void _onNewReading(double temperature, double distance) {
+    final reading = Reading(
+      timestamp: DateTime.now(),
+      temperature: double.parse(temperature.toStringAsFixed(1)),
+      distance: double.parse(distance.toStringAsFixed(1)),
+    );
+    _latestReading = reading;
+    _dataController.add(reading);
+    unawaited(StorageService.instance.addReading(reading));
     notifyListeners();
   }
 
-  // ─────────── Simulation (Debug only) ───────────
-  void _startSimulator() {
-    _simTimer?.cancel();
-    _simTimer = Timer.periodic(
-      Duration(seconds: StorageService.instance.updateRateSec),
-      (_) {
-        final now = DateTime.now().millisecondsSinceEpoch;
-        final temp = 25 + 10 * (0.5 + 0.5 * (now % 7000) / 7000);
-        final dist = 10 + 50 * ((now % 9000) / 9000);
-        final tilt = (now % 3000) / 100.0; // simulate 0–30°
-        final double riskScore =
-            (100 - dist).clamp(0, 100) * 0.4 + (temp - 20) * 3;
-        final int risk = riskScore.clamp(0, 100).round();
-        final status = AppTheme.statusText(risk);
-        final map = {
-          "distance": double.parse(dist.toStringAsFixed(1)),
-          "temperature": double.parse(temp.toStringAsFixed(1)),
-          "tilt": double.parse(tilt.toStringAsFixed(1)),
-          "risk": risk,
-          "status": status,
-        };
-        _handleJson(map);
-      },
-    );
+  Future<void> disconnect() async {
+    _manualDisconnect = true;
+    _bannerMessage = 'Disconnected – Tap to Reconnect';
+    _autoReconnecting = false;
+    _isConnecting = false;
+    await _disposeConnection();
+    notifyListeners();
   }
 
-  /// Allows injecting fake JSON during tests.
-  @visibleForTesting
-  void injectTestData(Map<String, dynamic> json) => _handleJson(json);
+  void _handleDisconnected() {
+    _disposeConnection();
+    _isConnecting = false;
+    if (_manualDisconnect) {
+      _autoReconnecting = false;
+      _bannerMessage = 'Disconnected – Tap to Reconnect';
+      notifyListeners();
+      return;
+    }
+    _startAutoReconnect();
+  }
 
-  /// Cleans up timers and streams (for tests).
-  @visibleForTesting
-  Future<void> disposeForTest() async {
-    _simTimer?.cancel();
-    await _dataCtrl.close();
+  Future<void> _disposeConnection() async {
+    await _inputSubscription?.cancel();
+    _inputSubscription = null;
+    await _connection?.finish();
+    _connection = null;
+    _device = null;
+    _incomingBuffer = '';
+  }
+
+  void _startAutoReconnect() {
+    if (_autoReconnecting) {
+      return;
+    }
+    _autoReconnecting = true;
+    _bannerMessage = 'Reconnecting to SmartBabyGuard…';
+    notifyListeners();
+    unawaited(_autoReconnect());
+  }
+
+  Future<void> _autoReconnect() async {
+    for (int attempt = 0; attempt < 3; attempt++) {
+      await Future.delayed(const Duration(seconds: 5));
+      try {
+        await connectTo(targetDeviceName);
+        if (isConnected) {
+          break;
+        }
+      } catch (_) {}
+    }
+    if (isConnected) {
+      _autoReconnecting = false;
+      _bannerMessage = null;
+    } else {
+      _autoReconnecting = false;
+      _bannerMessage = 'Disconnected – Tap to Reconnect';
+    }
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _dataController.close();
+    _disposeConnection();
+    super.dispose();
+  }
+
+  void _processIncomingBuffer() {
+    final regex = RegExp(r'TEMP:[^,]+,\s*DIST:[^\r\n]+');
+    final matches = regex.allMatches(_incomingBuffer).toList();
+    if (matches.isEmpty) {
+      return;
+    }
+    var processedIndex = 0;
+    for (final match in matches) {
+      final message = _incomingBuffer.substring(match.start, match.end).trim();
+      handleBluetoothData(message);
+      processedIndex = match.end;
+    }
+    _incomingBuffer =
+        _incomingBuffer.substring(processedIndex).replaceFirst(RegExp(r'^[\r\n]+'), '');
   }
 }
