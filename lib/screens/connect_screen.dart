@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
+
 import '../services/bluetooth_service.dart';
 
 class ConnectScreen extends StatefulWidget {
@@ -11,11 +13,31 @@ class ConnectScreen extends StatefulWidget {
 }
 
 class _ConnectScreenState extends State<ConnectScreen> {
-  String? _error;
+  Future<List<BluetoothDevice>>? _devicesFuture;
+  bool _initialized = false;
 
-  Future<void> _connect() async {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _loadDevices();
+      final bluetooth = context.read<BluetoothService>();
+      if (bluetooth.isConnected && mounted) {
+        Navigator.of(context).pushReplacementNamed('/dashboard');
+      }
+    });
+  }
+
+  Future<void> _loadDevices() async {
     final bluetooth = context.read<BluetoothService>();
-    setState(() => _error = null);
+    setState(() {
+      _devicesFuture = bluetooth.discover();
+    });
+    _initialized = true;
+  }
+
+  Future<void> _connectToDevice(BluetoothDevice device) async {
+    final bluetooth = context.read<BluetoothService>();
     try {
       await [
         Permission.bluetooth,
@@ -23,105 +45,128 @@ class _ConnectScreenState extends State<ConnectScreen> {
         Permission.bluetoothConnect,
         Permission.locationWhenInUse,
       ].request();
-      await bluetooth.connectTo();
-      if (!mounted) {
-        return;
-      }
+      await bluetooth.connectDevice(device);
+      if (!mounted) return;
       if (bluetooth.isConnected) {
-        Navigator.of(context).pushReplacementNamed('/dashboard');
+        Navigator.pushReplacementNamed(context, '/dashboard');
       }
     } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      setState(() => _error =
-          'Unable to connect. Ensure SmartBabyGuard is paired and powered on.');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Connect failed: $error')),
+      );
+    }
+  }
+
+  Future<void> _refreshDevices() async {
+    await _loadDevices();
+    final future = _devicesFuture;
+    if (future != null) {
+      await future;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final bluetooth = context.watch<BluetoothService>();
-    final isBusy = bluetooth.isConnecting || bluetooth.isAutoReconnecting;
+    final bool isBusy = bluetooth.isConnecting || bluetooth.isAutoReconnecting;
+    final future = _devicesFuture;
     return Scaffold(
       appBar: AppBar(title: const Text('Smart Baby Guard')),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 16),
-            Text(
-              'Connect to your SmartBabyGuard monitor to start tracking real-time temperature and distance.',
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 32),
-            Card(
-              elevation: 0,
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          bluetooth.isConnected
-                              ? Icons.bluetooth_connected
-                              : Icons.bluetooth_disabled,
-                          color: bluetooth.isConnected
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.error,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          bluetooth.isConnected
-                              ? 'SmartBabyGuard connected'
-                              : 'SmartBabyGuard not connected',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    if (_error != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Text(
-                          _error!,
-                          style: TextStyle(
-                              color: Theme.of(context).colorScheme.error),
-                        ),
-                      ),
-                    FilledButton.icon(
-                      onPressed: isBusy
-                          ? null
-                          : () {
-                              if (bluetooth.isConnected) {
-                                Navigator.of(context)
-                                    .pushReplacementNamed('/dashboard');
-                              } else {
-                                _connect();
-                              }
-                            },
-                      icon: Icon(bluetooth.isConnected
-                          ? Icons.dashboard
-                          : Icons.bluetooth_searching),
-                      label: Text(bluetooth.isConnected
-                          ? 'Go to Dashboard'
-                          : 'Connect to SmartBabyGuard'),
-                    ),
-                  ],
+      floatingActionButton: bluetooth.isConnected
+          ? FloatingActionButton.extended(
+              onPressed: () =>
+                  Navigator.pushReplacementNamed(context, '/dashboard'),
+              label: const Text('Continue'),
+              icon: const Icon(Icons.arrow_forward),
+            )
+          : null,
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const Icon(Icons.bluetooth, size: 28),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    bluetooth.isConnected
+                        ? 'Connected: ${bluetooth.device?.name ?? bluetooth.device?.address}'
+                        : 'Select your SmartBabyGuard device to connect.',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                 ),
-              ),
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  tooltip: 'Refresh devices',
+                  onPressed: isBusy ? null : _refreshDevices,
+                ),
+              ],
             ),
-            const Spacer(),
-            Text(
-              'Tip: Pair the SmartBabyGuard device from Bluetooth settings before using the app.',
-              style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          Expanded(
+            child: FutureBuilder<List<BluetoothDevice>>(
+              future: future,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.none &&
+                    !_initialized) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final devices = snapshot.data ?? [];
+                if (devices.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24.0),
+                      child: Text(
+                        'No bonded Bluetooth devices found. Pair the SmartBabyGuard (SPP) device in system settings then refresh.',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  );
+                }
+                return ListView.separated(
+                  itemCount: devices.length,
+                  separatorBuilder: (_, __) => const Divider(height: 0),
+                  itemBuilder: (_, index) {
+                    final device = devices[index];
+                    final bool isSelected =
+                        bluetooth.device?.address == device.address;
+                    final bool isConnectingToDevice =
+                        bluetooth.isConnecting && isSelected;
+                    return ListTile(
+                      title: Text(device.name ?? device.address),
+                      subtitle: Text(device.address),
+                      trailing: isConnectingToDevice
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : isSelected && bluetooth.isConnected
+                              ? const Icon(Icons.check_circle, color: Colors.green)
+                              : const Icon(Icons.link),
+                      onTap: isBusy
+                          ? null
+                          : () => _connectToDevice(device),
+                    );
+                  },
+                );
+              },
             ),
-          ],
-        ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              'Smart Lab Guardian – Supervisor: Dr. Mary Nsabagwa\nGroup 28: Wambui Mariam, Johnson Makmot Kabira, Mwesigwa Isaac, Bataringaya Bridget, Jonathan Katongole',
+              style: Theme.of(context).textTheme.bodySmall,
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
       ),
     );
   }
