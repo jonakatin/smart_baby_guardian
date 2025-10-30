@@ -1,122 +1,37 @@
-import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import '../models/sensor_record.dart';
-import 'package:flutter/material.dart';
+
+import '../models/reading.dart';
 
 class StorageService {
-  static final StorageService instance = StorageService._();
   StorageService._();
 
-  late Box<SensorRecord> recordsBox;
-  late Box settingsBox;
+  static final StorageService instance = StorageService._();
 
-  final _settingsCtrl = StreamController<void>.broadcast();
-  Stream<void> get settingsStream => _settingsCtrl.stream;
+  static const String _boxName = 'readings_box';
+
+  late Box<Reading> _box;
+
+  ValueListenable<Box<Reading>> get listenable => _box.listenable();
 
   Future<void> init() async {
-    recordsBox = await Hive.openBox<SensorRecord>('records');
-    settingsBox = await Hive.openBox('settings');
-
-    _applyDefaultSettings();
-
-    settingsBox.watch().listen((_) => _settingsCtrl.add(null));
-  }
-
-  Future<void> resetSettings() async {
-    await settingsBox.clear();
-    _applyDefaultSettings(force: true);
-    _settingsCtrl.add(null);
-  }
-
-  void _applyDefaultSettings({bool force = false}) {
-    final defaults = {
-      'themeMode': 'system',
-      'alarmVolume': 1.0,
-      'vibration': true,
-      'autoAck': false,
-      'autoConnect': true,
-      'updateRateSec': 1,
-    };
-
-    defaults.forEach((key, value) {
-      if (force) {
-        settingsBox.put(key, value);
-      } else {
-        settingsBox.putIfAbsent(key, () => value);
-      }
-    });
-  }
-
-  ThemeMode get themeMode {
-    final v = (settingsBox.get('themeMode') as String);
-    switch (v) {
-      case 'light':
-        return ThemeMode.light;
-      case 'dark':
-        return ThemeMode.dark;
-      default:
-        return ThemeMode.system;
+    if (!Hive.isAdapterRegistered(ReadingAdapter().typeId)) {
+      Hive.registerAdapter(ReadingAdapter());
     }
+    _box = await Hive.openBox<Reading>(_boxName);
   }
 
-  set themeMode(ThemeMode mode) {
-    settingsBox.put(
-        'themeMode',
-        switch (mode) {
-          ThemeMode.light => 'light',
-          ThemeMode.dark => 'dark',
-          _ => 'system',
-        });
+  Future<void> addReading(Reading reading) async {
+    await _box.add(reading);
   }
 
-  double get alarmVolume => (settingsBox.get('alarmVolume') as num).toDouble();
-  set alarmVolume(double v) =>
-      settingsBox.put('alarmVolume', v.clamp(0.0, 1.0));
-
-  bool get vibration => settingsBox.get('vibration') as bool;
-  set vibration(bool v) => settingsBox.put('vibration', v);
-
-  bool get autoAck => settingsBox.get('autoAck') as bool;
-  set autoAck(bool v) => settingsBox.put('autoAck', v);
-
-  bool get autoConnect => settingsBox.get('autoConnect') as bool;
-  set autoConnect(bool v) => settingsBox.put('autoConnect', v);
-
-  int get updateRateSec => settingsBox.get('updateRateSec') as int;
-  set updateRateSec(int v) => settingsBox.put('updateRateSec', v);
-
-  Future<void> addRecord(SensorRecord r) async {
-    await recordsBox.add(r);
-    if (recordsBox.length > 1000) {
-      final toDelete = recordsBox.length - 1000;
-      final keys = recordsBox.keys.take(toDelete).toList();
-      await recordsBox.deleteAll(keys);
-    }
+  List<Reading> getReadings() {
+    final items = _box.values.toList();
+    items.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return items;
   }
 
-  List<SensorRecord> get allDesc =>
-      recordsBox.values.toList().reversed.toList();
-
-  Future<void> clearHistory() async => recordsBox.clear();
-
-  (double avgTemp, double avgRisk)? sessionAverages() {
-    final data = recordsBox.values;
-    if (data.isEmpty) return null;
-    final t =
-        data.map((e) => e.temperature).reduce((a, b) => a + b) / data.length;
-    final r = data.map((e) => e.risk.toDouble()).reduce((a, b) => a + b) /
-        data.length;
-    return (t, r);
-  }
-}
-
-extension on Box {
-  T putIfAbsent<T>(String key, T Function() ifAbsent) {
-    if (containsKey(key)) {
-      return get(key) as T;
-    }
-    final value = ifAbsent();
-    put(key, value);
-    return value;
+  Future<void> clear() async {
+    await _box.clear();
   }
 }
