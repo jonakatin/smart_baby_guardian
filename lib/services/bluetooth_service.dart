@@ -89,7 +89,7 @@ class BluetoothService extends ChangeNotifier {
       _bannerMessage = 'Disconnected – Tap to Reconnect';
       notifyListeners();
       if (error is BluetoothConnectionException) {
-        throw error;
+        rethrow;
       }
       throw BluetoothConnectionException(
         'Unable to connect to SmartBabyGuard. Ensure the device is powered on, nearby, and paired.',
