@@ -1,9 +1,7 @@
 import 'dart:async';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:torch_light/torch_light.dart';
-import 'package:vibration/vibration.dart';
 
 import '../models/reading.dart';
 import 'storage_service.dart';
@@ -13,9 +11,9 @@ class AlertService extends ChangeNotifier {
     _loadFromStorage();
   }
 
-  final AudioPlayer _player = AudioPlayer()..setReleaseMode(ReleaseMode.loop);
-  Timer? _vibrationTimer;
+  final AlarmHandler _alarmHandler = AlarmHandler.instance;
   bool _alertActive = false;
+  DateTime? _acknowledgedUntil;
 
   bool _soundEnabled = true;
   bool _flashEnabled = true;
@@ -32,11 +30,23 @@ class AlertService extends ChangeNotifier {
 
   Future<void> handleReading(Reading reading) async {
     final bool needsAlert = reading.temperature > 37 || reading.distance < 15;
-    if (needsAlert) {
-      await _startAlert();
-    } else {
+    if (!needsAlert) {
+      _acknowledgedUntil = null;
       await _stopAlert();
+      return;
     }
+
+    if (_storage.autoAck) {
+      acknowledgeAlert();
+      return;
+    }
+
+    if (_acknowledgedUntil != null &&
+        DateTime.now().isBefore(_acknowledgedUntil!)) {
+      return;
+    }
+
+    await _startAlert();
   }
 
   Future<void> _startAlert() async {
@@ -55,9 +65,6 @@ class AlertService extends ChangeNotifier {
     if (_flashEnabled) {
       await _toggleTorch(true);
     }
-    if (_vibrateEnabled) {
-      _startVibration();
-    }
     notifyListeners();
   }
 
@@ -66,11 +73,8 @@ class AlertService extends ChangeNotifier {
       return;
     }
     _alertActive = false;
-    try {
-      await _player.stop();
-    } catch (_) {}
+    await _alarmHandler.stopAlarm();
     await _toggleTorch(false);
-    _stopVibration();
     notifyListeners();
   }
 
@@ -146,22 +150,22 @@ class AlertService extends ChangeNotifier {
     await _toggleTorch(false);
   }
 
-  void _startVibration() {
-    _vibrationTimer?.cancel();
-    _vibrationTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
-      if (_vibrateEnabled) {
-        final hasVibrator = await Vibration.hasVibrator();
-        if (hasVibrator) {
-          Vibration.vibrate(pattern: const [0, 300, 200, 300]);
-        }
+  void reloadFromStorage() {
+    _loadFromStorage();
+    if (_alertActive) {
+      unawaited(_updateAlarmOutputs());
+      if (_flashEnabled) {
+        unawaited(_toggleTorch(true));
+      } else {
+        unawaited(_toggleTorch(false));
       }
-    });
+    }
+    notifyListeners();
   }
 
-  void _stopVibration() {
-    _vibrationTimer?.cancel();
-    _vibrationTimer = null;
-    Vibration.cancel();
+  Future<void> disposeAlert() async {
+    await _alarmHandler.stopAlarm();
+    await _toggleTorch(false);
   }
 
   Future<void> _toggleTorch(bool enable) async {

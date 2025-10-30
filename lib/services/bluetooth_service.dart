@@ -50,7 +50,21 @@ class BluetoothService extends ChangeNotifier {
     }
   }
 
+  Future<List<BluetoothDevice>> discover() async {
+    await ensureOn();
+    return _bluetooth.getBondedDevices();
+  }
+
   Future<void> connectTo([String deviceName = targetDeviceName]) async {
+    final devices = await discover();
+    final BluetoothDevice device = devices.firstWhere(
+      (d) => d.name == deviceName,
+      orElse: () => throw Exception('Device not paired'),
+    );
+    await connectDevice(device);
+  }
+
+  Future<void> connectDevice(BluetoothDevice device) async {
     if (_isConnecting) {
       return;
     }
@@ -60,19 +74,6 @@ class BluetoothService extends ChangeNotifier {
     notifyListeners();
     try {
       await ensureOn();
-      final devices = await _bluetooth.getBondedDevices();
-      BluetoothDevice? device;
-      for (final candidate in devices) {
-        if (candidate.name == deviceName) {
-          device = candidate;
-          break;
-        }
-      }
-      if (device == null) {
-        throw BluetoothConnectionException(
-          'SmartBabyGuard is not paired. Pair the device in Bluetooth settings and try again.',
-        );
-      }
       final connection = await BluetoothConnection.toAddress(device.address);
       _device = device;
       _connection = connection;
