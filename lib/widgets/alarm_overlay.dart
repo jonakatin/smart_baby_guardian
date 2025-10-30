@@ -14,7 +14,7 @@ class AlarmOverlay extends StatelessWidget {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
           child: Container(
-            color: Colors.red.withOpacity(0.45),
+            color: Colors.red.withValues(alpha: 0.45),
             alignment: Alignment.center,
             padding: const EdgeInsets.all(24),
             child: ConstrainedBox(

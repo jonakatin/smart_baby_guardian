@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show ValueChanged;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -23,29 +24,29 @@ class SettingsScreen extends StatelessWidget {
           Card(
             child: Column(
               children: [
-                RadioListTile<ThemeMode>(
-                  title: const Text('System'),
-                  value: ThemeMode.system,
-                  groupValue: storage.themeMode,
-                  onChanged: (mode) {
-                    if (mode != null) storage.themeMode = mode;
-                  },
+                _buildThemeOption(
+                  context: context,
+                  mode: ThemeMode.system,
+                  selectedMode: storage.themeMode,
+                  label: 'System',
+                  icon: Icons.phone_iphone,
+                  onSelected: (mode) => storage.themeMode = mode,
                 ),
-                RadioListTile<ThemeMode>(
-                  title: const Text('Light'),
-                  value: ThemeMode.light,
-                  groupValue: storage.themeMode,
-                  onChanged: (mode) {
-                    if (mode != null) storage.themeMode = mode;
-                  },
+                _buildThemeOption(
+                  context: context,
+                  mode: ThemeMode.light,
+                  selectedMode: storage.themeMode,
+                  label: 'Light',
+                  icon: Icons.light_mode,
+                  onSelected: (mode) => storage.themeMode = mode,
                 ),
-                RadioListTile<ThemeMode>(
-                  title: const Text('Dark'),
-                  value: ThemeMode.dark,
-                  groupValue: storage.themeMode,
-                  onChanged: (mode) {
-                    if (mode != null) storage.themeMode = mode;
-                  },
+                _buildThemeOption(
+                  context: context,
+                  mode: ThemeMode.dark,
+                  selectedMode: storage.themeMode,
+                  label: 'Dark',
+                  icon: Icons.dark_mode,
+                  onSelected: (mode) => storage.themeMode = mode,
                 ),
               ],
             ),
@@ -163,6 +164,28 @@ class SettingsScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildThemeOption({
+    required BuildContext context,
+    required ThemeMode mode,
+    required ThemeMode selectedMode,
+    required String label,
+    required IconData icon,
+    required ValueChanged<ThemeMode> onSelected,
+  }) {
+    final selected = mode == selectedMode;
+    final colorScheme = Theme.of(context).colorScheme;
+    return ListTile(
+      leading: Icon(icon, color: selected ? colorScheme.primary : null),
+      title: Text(label),
+      trailing: Icon(
+        selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+        color: selected ? colorScheme.primary : null,
+      ),
+      selected: selected,
+      onTap: () => onSelected(mode),
     );
   }
 
