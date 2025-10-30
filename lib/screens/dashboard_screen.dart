@@ -48,6 +48,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: const Text('Smart Baby Guard'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: 'Settings',
+            onPressed: () => Navigator.of(context).pushNamed('/settings'),
+          ),
+          IconButton(
             icon: const Icon(Icons.bluetooth_disabled),
             tooltip: 'Disconnect',
             onPressed: () => context.read<BluetoothService>().disconnect(),
