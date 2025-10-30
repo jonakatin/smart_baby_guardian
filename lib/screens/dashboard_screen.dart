@@ -1,6 +1,8 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../models/reading.dart';
 import '../services/alert_service.dart';
 import '../services/bluetooth_service.dart';
@@ -70,42 +72,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
             final double distance = reading?.distance ?? double.infinity;
             final DateTime? timestamp = reading?.timestamp;
 
-            final bool dangerTemp = temperature >= 38.5;
+            const double cautionTempThreshold = 37;
+            const double dangerTempThreshold = 38.5;
+            const double cautionDistanceThreshold = 25;
+            const double dangerDistanceThreshold = 15;
 
-<<<<<<< HEAD
-              return SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Text(
-                          '🍼 Smart Baby Guard',
-                          style: TextStyle(
-                              fontSize: 22, fontWeight: FontWeight.w700),
-                        ),
-                        const Spacer(),
-                        Icon(
-                          bluetooth.isConnected
-                              ? Icons.circle
-                              : Icons.circle_outlined,
-                          color: bluetooth.isConnected
-                              ? Colors.green
-                              : Theme.of(context).colorScheme.error,
-                          size: 14,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          bluetooth.isConnected
-                              ? 'Connected'
-                              : (bluetooth.isConnecting
-                                  ? 'Connecting…'
-                                  : 'Disconnected'),
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-=======
+            final bool cautionTemp =
+                reading != null && temperature >= cautionTempThreshold;
+            final bool dangerTemp =
+                reading != null && temperature >= dangerTempThreshold;
+            final bool cautionDistance = reading != null &&
+                distance <= cautionDistanceThreshold;
+            final bool dangerDistance =
+                reading != null && distance <= dangerDistanceThreshold;
+
             int risk = 10;
-            if (dangerTemp || dangerDistance || (cautionTemp && cautionDistance)) {
+            if (dangerTemp || dangerDistance) {
               risk = 80;
             } else if (cautionTemp || cautionDistance) {
               risk = 55;
@@ -154,198 +136,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             bluetooth.isConnected
                                 ? Icons.circle
                                 : Icons.circle_outlined,
->>>>>>> 250734b1229e7dfb644a4455e93841e280233ade
                             color: bluetooth.isConnected
                                 ? Colors.green
                                 : Theme.of(context).colorScheme.error,
                             size: 14,
                           ),
-<<<<<<< HEAD
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    if (bluetooth.bannerMessage != null)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color:
-                              Theme.of(context).colorScheme.secondaryContainer,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          bluetooth.bannerMessage!,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ),
-                    if (bluetooth.bannerMessage != null)
-                      const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _DataCard(
-                            title: 'Current Temperature',
-                            icon: '🌡',
-                            value: reading != null
-                                ? '${reading.temperature.toStringAsFixed(1)} °C'
-                                : '--',
-                            background: highTemp
-                                ? Theme.of(context).colorScheme.errorContainer
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .surfaceContainerHighest,
-                            valueStyle: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: highTemp
-                                  ? Theme.of(context)
-                                      .colorScheme
-                                      .onErrorContainer
-                                  : Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _DataCard(
-                            title: 'Current Distance',
-                            icon: '📏',
-                            value: reading != null
-                                ? '${reading.distance.toStringAsFixed(1)} cm'
-                                : '--',
-                            background: criticalDistance
-                                ? Theme.of(context).colorScheme.errorContainer
-                                : closeDistance
-                                    ? Theme.of(context)
-                                        .colorScheme
-                                        .tertiaryContainer
-                                    : Theme.of(context)
-                                        .colorScheme
-                                        .surfaceContainerHighest,
-                            valueStyle: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: criticalDistance
-                                  ? Theme.of(context)
-                                      .colorScheme
-                                      .onErrorContainer
-                                  : closeDistance
-                                      ? Theme.of(context)
-                                          .colorScheme
-                                          .onTertiaryContainer
-                                      : Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    if (alertMessage != null)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.errorContainer,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          alertMessage,
-                          style: TextStyle(
-                            color:
-                                Theme.of(context).colorScheme.onErrorContainer,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    if (alertMessage == null)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          reading == null
-                              ? 'Waiting for data…'
-                              : 'All readings look safe.',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Alerts',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _AlertToggle(
-                            label: 'Sound',
-                            icon: Icons.volume_up,
-                            value: alert.soundEnabled,
-                            onChanged: alert.setSoundEnabled,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _AlertToggle(
-                            label: 'Flash',
-                            icon: Icons.flash_on,
-                            value: alert.flashEnabled,
-                            onChanged: alert.setFlashEnabled,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _AlertToggle(
-                            label: 'Vibrate',
-                            icon: Icons.vibration,
-                            value: alert.vibrateEnabled,
-                            onChanged: alert.setVibrateEnabled,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Connection Info',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                              'Device: ${bluetooth.device?.name ?? 'SmartBabyGuard'}'),
-                          const SizedBox(height: 4),
-                          Text(
-                              'Status: ${bluetooth.isConnected ? 'Connected' : 'Disconnected'}'),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: () =>
-                            Navigator.of(context).pushNamed('/history'),
-                        icon: const Icon(Icons.history),
-                        label: const Text('View History'),
-=======
                           const SizedBox(width: 8),
                           Text(
                             connectionLabel,
@@ -421,7 +216,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ],
                           );
                         },
->>>>>>> 250734b1229e7dfb644a4455e93841e280233ade
                       ),
                       const SizedBox(height: 12),
                       SensorCard(
@@ -441,9 +235,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       LayoutBuilder(
                         builder: (context, constraints) {
                           final double maxWidth = constraints.maxWidth;
-                          final double tileWidth = maxWidth > 720
-                              ? 220
-                              : maxWidth;
+                          final double tileWidth =
+                              maxWidth > 720 ? 220 : maxWidth;
                           return Wrap(
                             spacing: 12,
                             runSpacing: 12,
@@ -494,7 +287,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Device: ${bluetooth.device?.name ?? 'SmartBabyGuard'}'),
+                              Text(
+                                  'Device: ${bluetooth.device?.name ?? 'SmartBabyGuard'}'),
                               const SizedBox(height: 4),
                               Text('Status: $connectionLabel'),
                             ],
@@ -527,7 +321,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-// ignore: unused_element
 class _AlertToggle extends StatelessWidget {
   const _AlertToggle({
     required this.label,
@@ -543,22 +336,6 @@ class _AlertToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-<<<<<<< HEAD
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Icon(icon),
-          const SizedBox(width: 12),
-          Expanded(
-              child: Text(label, style: Theme.of(context).textTheme.bodyLarge)),
-          Switch(value: value, onChanged: onChanged),
-        ],
-=======
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -570,7 +347,6 @@ class _AlertToggle extends StatelessWidget {
           title: Text(label),
           secondary: Icon(icon),
         ),
->>>>>>> 250734b1229e7dfb644a4455e93841e280233ade
       ),
     );
   }
