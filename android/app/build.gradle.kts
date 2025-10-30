@@ -20,8 +20,8 @@ android {
 
     defaultConfig {
         applicationId = "com.smartbabyguard.app"
-        minSdk = 23
-        targetSdk = 35
+        minSdk = flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
