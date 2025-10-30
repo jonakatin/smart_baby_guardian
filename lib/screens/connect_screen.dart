@@ -34,8 +34,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
       if (!mounted) {
         return;
       }
-      setState(() => _error =
-          'Unable to connect. Ensure SmartBabyGuard is paired and powered on.');
+      final message = error is BluetoothConnectionException
+          ? error.message
+          : 'Unable to connect. Ensure SmartBabyGuard is paired and powered on.';
+      setState(() => _error = message);
     }
   }
 
