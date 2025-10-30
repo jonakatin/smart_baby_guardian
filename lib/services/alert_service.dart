@@ -106,7 +106,7 @@ class AlertService extends ChangeNotifier {
     _vibrationTimer?.cancel();
     _vibrationTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
       if (_vibrateEnabled) {
-        final hasVibrator = await Vibration.hasVibrator() ?? false;
+        final hasVibrator = await Vibration.hasVibrator();
         if (hasVibrator) {
           Vibration.vibrate(pattern: const [0, 300, 200, 300]);
         }
