@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-
 import '../services/bluetooth_service.dart';
 
 class ConnectScreen extends StatefulWidget {
@@ -35,7 +34,8 @@ class _ConnectScreenState extends State<ConnectScreen> {
       if (!mounted) {
         return;
       }
-      setState(() => _error = 'Unable to connect. Ensure SmartBabyGuard is paired and powered on.');
+      setState(() => _error =
+          'Unable to connect. Ensure SmartBabyGuard is paired and powered on.');
     }
   }
 
@@ -67,14 +67,18 @@ class _ConnectScreenState extends State<ConnectScreen> {
                     Row(
                       children: [
                         Icon(
-                          bluetooth.isConnected ? Icons.bluetooth_connected : Icons.bluetooth_disabled,
+                          bluetooth.isConnected
+                              ? Icons.bluetooth_connected
+                              : Icons.bluetooth_disabled,
                           color: bluetooth.isConnected
                               ? Theme.of(context).colorScheme.primary
                               : Theme.of(context).colorScheme.error,
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          bluetooth.isConnected ? 'SmartBabyGuard connected' : 'SmartBabyGuard not connected',
+                          bluetooth.isConnected
+                              ? 'SmartBabyGuard connected'
+                              : 'SmartBabyGuard not connected',
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                       ],
@@ -85,7 +89,8 @@ class _ConnectScreenState extends State<ConnectScreen> {
                         padding: const EdgeInsets.only(bottom: 16),
                         child: Text(
                           _error!,
-                          style: TextStyle(color: Theme.of(context).colorScheme.error),
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.error),
                         ),
                       ),
                     FilledButton.icon(
@@ -99,8 +104,12 @@ class _ConnectScreenState extends State<ConnectScreen> {
                                 _connect();
                               }
                             },
-                      icon: Icon(bluetooth.isConnected ? Icons.dashboard : Icons.bluetooth_searching),
-                      label: Text(bluetooth.isConnected ? 'Go to Dashboard' : 'Connect to SmartBabyGuard'),
+                      icon: Icon(bluetooth.isConnected
+                          ? Icons.dashboard
+                          : Icons.bluetooth_searching),
+                      label: Text(bluetooth.isConnected
+                          ? 'Go to Dashboard'
+                          : 'Connect to SmartBabyGuard'),
                     ),
                   ],
                 ),
