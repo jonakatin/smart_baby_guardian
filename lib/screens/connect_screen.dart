@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import '../services/bluetooth_service.dart';
+import '../services/permission_service.dart';
 
 class ConnectScreen extends StatefulWidget {
   const ConnectScreen({super.key});
@@ -38,12 +38,18 @@ class _ConnectScreenState extends State<ConnectScreen> {
   Future<void> _connectToDevice(BluetoothDevice device) async {
     final bluetooth = context.read<BluetoothService>();
     try {
-      await [
-        Permission.bluetooth,
-        Permission.bluetoothScan,
-        Permission.bluetoothConnect,
-        Permission.locationWhenInUse,
-      ].request();
+      final granted = await PermissionService.requestBluetoothPermissions();
+      if (!granted) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Bluetooth permissions are required to connect to SmartBabyGuard.',
+            ),
+          ),
+        );
+        return;
+      }
       await bluetooth.connectDevice(device);
       if (!mounted) return;
       if (bluetooth.isConnected) {
