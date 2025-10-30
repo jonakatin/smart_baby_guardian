@@ -13,7 +13,6 @@ dependencies:
   flutter_bluetooth_serial: ^0.4.0
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  audioplayers: ^6.1.0
   vibration: ^3.1.4
   intl: ^0.20.2
   torch_light: ^1.0.0
