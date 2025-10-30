@@ -2,8 +2,18 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+
 import '../models/reading.dart';
 import 'storage_service.dart';
+
+class BluetoothConnectionException implements Exception {
+  BluetoothConnectionException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
 
 class BluetoothService extends ChangeNotifier {
   BluetoothService();
@@ -40,7 +50,21 @@ class BluetoothService extends ChangeNotifier {
     }
   }
 
+  Future<List<BluetoothDevice>> discover() async {
+    await ensureOn();
+    return _bluetooth.getBondedDevices();
+  }
+
   Future<void> connectTo([String deviceName = targetDeviceName]) async {
+    final devices = await discover();
+    final BluetoothDevice device = devices.firstWhere(
+      (d) => d.name == deviceName,
+      orElse: () => throw Exception('Device not paired'),
+    );
+    await connectDevice(device);
+  }
+
+  Future<void> connectDevice(BluetoothDevice device) async {
     if (_isConnecting) {
       return;
     }
@@ -50,11 +74,6 @@ class BluetoothService extends ChangeNotifier {
     notifyListeners();
     try {
       await ensureOn();
-      final devices = await _bluetooth.getBondedDevices();
-      final BluetoothDevice device = devices.firstWhere(
-        (d) => d.name == deviceName,
-        orElse: () => throw Exception('Device not paired'),
-      );
       final connection = await BluetoothConnection.toAddress(device.address);
       _device = device;
       _connection = connection;
@@ -69,7 +88,12 @@ class BluetoothService extends ChangeNotifier {
       _device = null;
       _bannerMessage = 'Disconnected – Tap to Reconnect';
       notifyListeners();
-      rethrow;
+      if (error is BluetoothConnectionException) {
+        throw error;
+      }
+      throw BluetoothConnectionException(
+        'Unable to connect to SmartBabyGuard. Ensure the device is powered on, nearby, and paired.',
+      );
     }
   }
 
