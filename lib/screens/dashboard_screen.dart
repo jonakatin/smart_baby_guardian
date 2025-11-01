@@ -87,9 +87,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 reading != null && distance <= dangerDistanceThreshold;
 
             int risk = 10;
-            if (dangerTemp || dangerDistance) {
+            if (dangerTemp && dangerDistance) {
               risk = 80;
-            } else if (cautionTemp || cautionDistance) {
+            } else if (cautionTemp && cautionDistance) {
               risk = 55;
             }
             final String status = AppTheme.statusText(risk);
