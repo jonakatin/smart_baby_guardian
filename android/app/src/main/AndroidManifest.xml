@@ -15,7 +15,7 @@
 
 
     <application
-        android:label="Smart Baby Guard"
+        android:label="Smart Temperature Guardian"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
