@@ -81,15 +81,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 reading != null && temperature >= cautionTempThreshold;
             final bool dangerTemp =
                 reading != null && temperature >= dangerTempThreshold;
-            final bool cautionDistance = reading != null &&
-                distance <= cautionDistanceThreshold;
+            final bool cautionDistance =
+                reading != null && distance <= cautionDistanceThreshold;
             final bool dangerDistance =
                 reading != null && distance <= dangerDistanceThreshold;
 
             int risk = 10;
-            if (dangerTemp || dangerDistance) {
+            if (dangerTemp && dangerDistance) {
               risk = 80;
-            } else if (cautionTemp || cautionDistance) {
+            } else if (cautionTemp && cautionDistance) {
               risk = 55;
             }
             final String status = AppTheme.statusText(risk);
@@ -159,8 +159,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color:
-                                Theme.of(context).colorScheme.secondaryContainer,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .secondaryContainer,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
