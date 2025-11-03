@@ -1,12 +1,12 @@
-🛡️ Smart Baby Guard
-Smart Baby Guard is a Flutter companion app for the SmartBabyGuard ESP32 firmware. It connects over Bluetooth Classic to stream temperature and distance data, trigger audible/visual/vibration alerts, and store historical readings locally.
+🛡️ Smart Temperature Guardian
+Smart Temperature Guardian is a Flutter companion app for the SmartTemperatureGuardian ESP32 firmware. It connects over Bluetooth Classic to stream temperature and distance data, trigger audible/visual/vibration alerts, and store historical readings locally.
 
 Project Description
-The Smart Baby Guard system keeps infants safe by combining embedded sensing and mobile monitoring.
+The Smart Temperature Guardian system keeps infants safe by combining embedded sensing and mobile monitoring.
 It integrates:
 • A temperature sensor (DS18B20) for heat detection
 • An ultrasonic sensor (HC-SR04) for proximity alerts
-• Bluetooth Classic connectivity via the SmartBabyGuard device
+• Bluetooth Classic connectivity via the SmartTemperatureGuardian device
 
 Whenever the ESP32 reports dangerous temperature or close distance values, the app raises alarms (sound, vibration, flashlight, and on-screen warnings) and logs data locally for review.
 
@@ -30,7 +30,7 @@ Features
 • Alert banner + sound, flash, and vibration toggles
 • Local history powered by Hive
 • Material 3 light/dark/system themes
-• Custom Smart Baby Guard launcher icon
+• Custom Smart Temperature Guardian launcher icon
 
 Installation & Setup
 1️⃣ Clone the Repository:

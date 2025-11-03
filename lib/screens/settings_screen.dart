@@ -151,7 +151,7 @@ class SettingsScreen extends StatelessWidget {
           const ListTile(title: Text('About')),
           Card(
             child: const ListTile(
-              title: Text('Smart Baby Guard'),
+              title: Text('Smart Temperature Guardian'),
               subtitle: Text(
                 'Version 2.1.0\n'
                 'Supervisor: Dr. Mary Nsabagwa\n'
