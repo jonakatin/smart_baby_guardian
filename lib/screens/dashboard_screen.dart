@@ -50,7 +50,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Smart Baby Guard'),
+        title: const Text('Smart Temperature Guard'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -101,7 +101,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     risk: 55,
                     status: 'CAUTION',
                     message: attemptingConnection
-                        ? 'Attempting to connect to SmartBabyGuard…'
+                        ? 'Attempting to connect to SmartTemperatureGuard…'
                         : 'Device disconnected. Open Connect to pair again.',
                   )
                 : StatusBanner(risk: risk, status: status);
@@ -125,7 +125,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Row(
                         children: [
                           Text(
-                            '🍼 Smart Baby Guard',
+                            '🍼 Smart Temperature Guard',
                             style: Theme.of(context)
                                 .textTheme
                                 .headlineSmall
@@ -288,7 +288,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                  'Device: ${bluetooth.device?.name ?? 'SmartBabyGuard'}'),
+                                  'Device: ${bluetooth.device?.name ?? 'SmartTemperatureGuard'}'),
                               const SizedBox(height: 4),
                               Text('Status: $connectionLabel'),
                             ],

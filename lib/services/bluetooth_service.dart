@@ -17,7 +17,7 @@ class BluetoothConnectionException implements Exception {
 class BluetoothService extends ChangeNotifier {
   BluetoothService();
 
-  static const String targetDeviceName = 'SmartBabyGuard';
+  static const String targetDeviceName = 'SmartTemperatureGuard';
 
   final FlutterBluetoothSerial _bluetooth = FlutterBluetoothSerial.instance;
   BluetoothConnection? _connection;
@@ -91,7 +91,7 @@ class BluetoothService extends ChangeNotifier {
         rethrow;
       }
       throw BluetoothConnectionException(
-        'Unable to connect to SmartBabyGuard. Ensure the device is powered on, nearby, and paired.',
+        'Unable to connect to Smart Temperature Guard. Ensure the device is powered on, nearby, and paired.',
       );
     }
   }
@@ -168,7 +168,7 @@ class BluetoothService extends ChangeNotifier {
       return;
     }
     _autoReconnecting = true;
-    _bannerMessage = 'Reconnecting to SmartBabyGuard…';
+    _bannerMessage = 'Reconnecting to SmartTemperatureGuard…';
     notifyListeners();
     unawaited(_autoReconnect());
   }

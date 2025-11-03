@@ -19,7 +19,8 @@ class _FakeBluetoothService extends BluetoothService {
 }
 
 void main() {
-  testWidgets('Smart Baby Guard launches connect screen', (tester) async {
+  testWidgets('Smart Temperature Guard launches connect screen',
+      (tester) async {
     await tester.pumpWidget(
       MultiProvider(
         providers: [
@@ -30,8 +31,10 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Smart Baby Guard'), findsOneWidget);
-    expect(find.textContaining('Select your SmartBabyGuard device to connect'),
+    expect(find.text('Smart Temperature Guard'), findsOneWidget);
+    expect(
+        find.textContaining(
+            'Select your SmartTemperatureGuard device to connect'),
         findsOneWidget);
   });
 }
