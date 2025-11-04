@@ -1,12 +1,18 @@
 package com.smartbabyguard.app
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraManager
+import android.hardware.camera2.CameraManager.TorchCallback
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -14,17 +20,24 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     private val channelName = "com.smartbabyguard/permissions"
     private val alarmChannelName = "com.smartbabyguard/alarm"
+    private val torchChannelName = "com.smartbabyguard/torch"
     private val requestCode = 1001
     private var pendingResult: MethodChannel.Result? = null
     private var mediaPlayer: MediaPlayer? = null
     private var alarmAssetPath: String? = null
     private var assetLookup: ((String) -> String)? = null
+    private var cameraManager: CameraManager? = null
+    private var torchCameraId: String? = null
+    private var torchAvailable: Boolean? = null
+    private var torchCallback: TorchCallback? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         assetLookup = { asset ->
             flutterEngine.dartExecutor.flutterAssets.getAssetFilePathByName(asset)
         }
+        cameraManager = getSystemService(Context.CAMERA_SERVICE) as? CameraManager
+        registerTorchCallback()
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName)
             .setMethodCallHandler { call, result ->
@@ -77,6 +90,39 @@ class MainActivity : FlutterActivity() {
                     "dispose" -> {
                         disposeAlarm()
                         result.success(null)
+                    }
+
+                    else -> result.notImplemented()
+                }
+            }
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, torchChannelName)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "isTorchAvailable" -> result.success(isTorchAvailable())
+
+                    "enable" -> {
+                        if (setTorchState(true)) {
+                            result.success(null)
+                        } else {
+                            result.error(
+                                "TORCH_ERROR",
+                                "Unable to enable the torch.",
+                                null
+                            )
+                        }
+                    }
+
+                    "disable" -> {
+                        if (setTorchState(false)) {
+                            result.success(null)
+                        } else {
+                            result.error(
+                                "TORCH_ERROR",
+                                "Unable to disable the torch.",
+                                null
+                            )
+                        }
                     }
 
                     else -> result.notImplemented()
@@ -246,8 +292,122 @@ class MainActivity : FlutterActivity() {
         mediaPlayer = null
     }
 
+    private fun isTorchAvailable(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            return false
+        }
+        torchAvailable?.let { return it }
+
+        val hasFlash = packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)
+        val manager = cameraManager
+        if (!hasFlash || manager == null) {
+            torchAvailable = false
+            return false
+        }
+
+        torchAvailable = ensureTorchCameraId(manager) != null
+        return torchAvailable ?: false
+    }
+
+    private fun ensureTorchCameraId(manager: CameraManager): String? {
+        torchCameraId?.let { return it }
+        return try {
+            val ids = manager.cameraIdList
+            if (ids.isEmpty()) {
+                null
+            } else {
+                torchCameraId = findCameraWithFlash(manager, ids)
+                torchCameraId
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun findCameraWithFlash(manager: CameraManager, ids: Array<String>): String? {
+        var fallback: String? = null
+        for (id in ids) {
+            try {
+                val characteristics = manager.getCameraCharacteristics(id)
+                val hasFlash = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
+                if (!hasFlash) {
+                    continue
+                }
+                val facing = characteristics.get(CameraCharacteristics.LENS_FACING)
+                if (facing == CameraCharacteristics.LENS_FACING_BACK) {
+                    return id
+                }
+                if (fallback == null) {
+                    fallback = id
+                }
+            } catch (_: Exception) {
+                // Ignore cameras that cannot be queried.
+            }
+        }
+        return fallback
+    }
+
+    private fun setTorchState(enable: Boolean): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            return false
+        }
+        val manager = cameraManager ?: return false
+        val cameraId = ensureTorchCameraId(manager) ?: return false
+        return try {
+            manager.setTorchMode(cameraId, enable)
+            true
+        } catch (_: Exception) {
+            torchCameraId = null
+            false
+        }
+    }
+
+    private fun registerTorchCallback() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            return
+        }
+        val manager = cameraManager ?: return
+        if (torchCallback != null) {
+            return
+        }
+        val handler = Handler(Looper.getMainLooper())
+        val callback = object : TorchCallback() {
+            override fun onTorchModeUnavailable(cameraId: String) {
+                if (cameraId == torchCameraId) {
+                    torchAvailable = null
+                }
+            }
+
+            override fun onTorchModeChanged(cameraId: String, enabled: Boolean) {
+                if (cameraId == torchCameraId) {
+                    torchAvailable = true
+                }
+            }
+        }
+        torchCallback = callback
+        try {
+            manager.registerTorchCallback(callback, handler)
+        } catch (_: Exception) {
+            torchCallback = null
+        }
+    }
+
+    private fun unregisterTorchCallback() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            return
+        }
+        val manager = cameraManager ?: return
+        val callback = torchCallback ?: return
+        try {
+            manager.unregisterTorchCallback(callback)
+        } catch (_: Exception) {
+        }
+        torchCallback = null
+    }
+
     override fun onDestroy() {
         disposeAlarm()
+        unregisterTorchCallback()
         super.onDestroy()
     }
 }
