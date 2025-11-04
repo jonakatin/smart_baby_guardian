@@ -33,7 +33,8 @@ class AlertService extends ChangeNotifier {
   double get volume => _volume;
 
   Future<void> handleReading(Reading reading) async {
-    final bool needsAlert = reading.temperature > 37 && reading.distance < 15;
+    final bool needsAlert =
+        reading.temperature > 27 && reading.distance < 15;
     if (!needsAlert) {
       _acknowledgedUntil = null;
       await _stopAlert();

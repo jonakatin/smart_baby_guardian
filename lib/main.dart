@@ -12,11 +12,11 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
   await StorageService.instance.init();
-  runApp(const SmartTemperatureGuardianApp());
+  runApp(const SmartTemperatureGuardApp());
 }
 
-class SmartTemperatureGuardianApp extends StatelessWidget {
-  const SmartTemperatureGuardianApp({super.key});
+class SmartTemperatureGuardApp extends StatelessWidget {
+  const SmartTemperatureGuardApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +27,7 @@ class SmartTemperatureGuardianApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AlertService()),
       ],
       child: MaterialApp(
-        title: 'Smart Temperature Guardian',
+        title: 'Smart Temperature Guard',
         themeMode: ThemeMode.system,
         theme: ThemeData(
           useMaterial3: true,

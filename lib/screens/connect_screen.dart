@@ -44,7 +44,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'Bluetooth permissions are required to connect to Smart Temperature Guardian.',
+              'Bluetooth permissions are required to connect to Smart Temperature Guard.',
             ),
           ),
         );
@@ -82,7 +82,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
     final bool isBusy = bluetooth.isConnecting || bluetooth.isAutoReconnecting;
     final future = _devicesFuture;
     return Scaffold(
-      appBar: AppBar(title: const Text('Smart Temperature Guardian')),
+      appBar: AppBar(title: const Text('Smart Temperature Guard')),
       floatingActionButton: bluetooth.isConnected
           ? FloatingActionButton.extended(
               onPressed: () =>
@@ -103,7 +103,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
                   child: Text(
                     bluetooth.isConnected
                         ? 'Connected: ${bluetooth.device?.name ?? bluetooth.device?.address}'
-                        : 'Select your SmartTemperatureGuardian device to connect.',
+                        : 'Select your SmartTemperatureGuard device to connect.',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
@@ -132,7 +132,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
                     child: Padding(
                       padding: EdgeInsets.all(24.0),
                       child: Text(
-                        'No bonded Bluetooth devices found. Pair the SmartTemperatureGuardian (SPP) device in system settings then refresh.',
+                        'No bonded Bluetooth devices found. Pair the SmartTemperatureGuard (SPP) device in system settings then refresh.',
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -170,7 +170,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'Smart Temperature Guardian – Supervisor: Dr. Mary Nsabagwa\nGroup 28: Wambui Mariam, Johnson Makmot Kabira, Mwesigwa Isaac, Bataringaya Bridget, Jonathan Katongole',
+              'Smart Temperature Guard – Supervisor: Dr. Mary Nsabagwa\nGroup 28: Wambui Mariam, Johnson Makmot Kabira, Mwesigwa Isaac, Bataringaya Bridget, Jonathan Katongole',
               style: Theme.of(context).textTheme.bodySmall,
               textAlign: TextAlign.center,
             ),

@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.smartbabyguard.app" "\0"
-            VALUE "FileDescription", "Smart Temperature Guardian" "\0"
+            VALUE "FileDescription", "Smart Temperature Guard" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "smart_baby_guard" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 com.smartbabyguard.app. All rights reserved." "\0"
             VALUE "OriginalFilename", "smart_baby_guard.exe" "\0"
-            VALUE "ProductName", "Smart Temperature Guardian" "\0"
+            VALUE "ProductName", "Smart Temperature Guard" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

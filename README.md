@@ -1,12 +1,12 @@
-🛡️ Smart Temperature Guardian
-Smart Temperature Guardian is a Flutter companion app for the SmartTemperatureGuardian ESP32 firmware. It connects over Bluetooth Classic to stream temperature and distance data, trigger audible/visual/vibration alerts, and store historical readings locally.
+🛡️ Smart Temperature Guard
+Smart Temperature Guard is a Flutter companion app for the SmartTemperatureGuard ESP32 firmware. It connects over Bluetooth Classic to stream temperature and distance data, trigger audible/visual/vibration alerts, and store historical readings locally.
 
 Project Description
-The Smart Temperature Guardian system keeps infants safe by combining embedded sensing and mobile monitoring.
+The Smart Temperature Guard system keeps infants safe by combining embedded sensing and mobile monitoring.
 It integrates:
 • A temperature sensor (DS18B20) for heat detection
 • An ultrasonic sensor (HC-SR04) for proximity alerts
-• Bluetooth Classic connectivity via the SmartTemperatureGuardian device
+• Bluetooth Classic connectivity via the SmartTemperatureGuard device
 
 Whenever the ESP32 reports dangerous temperature or close distance values, the app raises alarms (sound, vibration, flashlight, and on-screen warnings) and logs data locally for review.
 
@@ -30,7 +30,7 @@ Features
 • Alert banner + sound, flash, and vibration toggles
 • Local history powered by Hive
 • Material 3 light/dark/system themes
-• Custom Smart Temperature Guardian launcher icon
+• Custom Smart Temperature Guard launcher icon
 
 Installation & Setup
 1️⃣ Clone the Repository:

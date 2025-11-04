@@ -1,6 +1,6 @@
 {
-    "name": "Smart Temperature Guardian",
-    "short_name": "Smart Temperature Guardian",
+    "name": "Smart Temperature Guard",
+    "short_name": "Smart Temperature Guard",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
