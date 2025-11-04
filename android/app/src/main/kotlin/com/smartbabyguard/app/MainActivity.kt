@@ -35,14 +35,7 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         val flutterLoader = FlutterInjector.instance().flutterLoader()
-        assetLookup = { asset ->
-            val entrypoint = flutterEngine.dartExecutor.dartEntrypoint
-            if (entrypoint != null) {
-                flutterLoader.getLookupKeyForAsset(asset, entrypoint.dartEntrypointLibrary)
-            } else {
-                flutterLoader.getLookupKeyForAsset(asset)
-            }
-        }
+        assetLookup = { asset -> flutterLoader.getLookupKeyForAsset(asset) }
         cameraManager = getSystemService(Context.CAMERA_SERVICE) as? CameraManager
         registerTorchCallback()
 
