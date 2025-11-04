@@ -1,4 +1,4 @@
-package com.smartbabyguard.app
+package com.smarttemperatureguard.app
 
 import android.Manifest
 import android.content.Context
@@ -18,9 +18,9 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
-    private val channelName = "com.smartbabyguard/permissions"
-    private val alarmChannelName = "com.smartbabyguard/alarm"
-    private val torchChannelName = "com.smartbabyguard/torch"
+    private val channelName = "com.smarttemperatureguard/permissions"
+    private val alarmChannelName = "com.smarttemperatureguard/alarm"
+    private val torchChannelName = "com.smarttemperaturguard/torch"
     private val requestCode = 1001
     private var pendingResult: MethodChannel.Result? = null
     private var mediaPlayer: MediaPlayer? = null
