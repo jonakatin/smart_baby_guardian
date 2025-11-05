@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.smartbabyguard.app"
+    namespace = "com.smarttemperatureguard.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -19,7 +19,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.smartbabyguard.app"
+        applicationId = "com.smarttemperatureguard.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
