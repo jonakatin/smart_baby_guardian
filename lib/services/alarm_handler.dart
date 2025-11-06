@@ -6,8 +6,9 @@ class AlarmHandler {
 
   static final AlarmHandler instance = AlarmHandler._();
 
-  static const MethodChannel _channel = MethodChannel('com.smartbabyguard/alarm');
-  static const String _alarmAsset = 'sounds/high_alarm.wav';
+  static const MethodChannel _channel =
+      MethodChannel('com.smartbabyguard/alarm');
+  static const String _alarmAsset = 'sounds/high_alarm.mp3';
   bool _initialized = false;
 
   Future<void> init() async {
@@ -15,7 +16,8 @@ class AlarmHandler {
       return;
     }
     try {
-      await _channel.invokeMethod('initialize', <String, Object>{'asset': _alarmAsset});
+      await _channel
+          .invokeMethod('initialize', <String, Object>{'asset': _alarmAsset});
       _initialized = true;
     } on PlatformException {
       // Ignore and rely on best-effort behaviour on unsupported platforms.
@@ -44,7 +46,8 @@ class AlarmHandler {
   Future<void> updateVolume(double volume) async {
     final double clamped = volume.clamp(0.0, 1.0);
     try {
-      await _channel.invokeMethod('setVolume', <String, Object>{'volume': clamped});
+      await _channel
+          .invokeMethod('setVolume', <String, Object>{'volume': clamped});
     } on PlatformException {
       // No-op on unsupported platforms.
     }

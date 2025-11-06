@@ -82,10 +82,11 @@ class BluetoothService extends ChangeNotifier {
       notifyListeners();
       _listenToIncoming();
     } catch (error) {
+      debugPrint('Bluetooth connect error: $error');
       _isConnecting = false;
       _connection = null;
       _device = null;
-      _bannerMessage = 'Disconnected – Tap to Reconnect';
+      _bannerMessage = 'Connection failed: ${error.toString()}';
       notifyListeners();
       if (error is BluetoothConnectionException) {
         rethrow;

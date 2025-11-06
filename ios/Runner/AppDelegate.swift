@@ -109,7 +109,7 @@ import UIKit
   }
 
   private func startAlarm(volume: Float) -> Bool {
-    guard let path = alarmAssetPath ?? assetPath(for: "sounds/high_alarm.wav") else {
+    guard let path = alarmAssetPath ?? assetPath(for: "sounds/high_alarm.mp3") else {
       return false
     }
     do {

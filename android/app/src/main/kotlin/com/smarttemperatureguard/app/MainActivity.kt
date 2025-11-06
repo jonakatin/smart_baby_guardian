@@ -23,7 +23,7 @@ class MainActivity : FlutterActivity() {
         private const val TAG = "MainActivity"
         private const val METHOD_CHANNEL = "com.smarttemperatureguard/alarm"
         private const val PERMISSION_REQUEST_CODE = 1001
-        private const val ALARM_ASSET_PATH = "assets/sounds/high_alarm.wav"
+        private const val ALARM_ASSET_PATH = "assets/sounds/high_alarm.mp3"
     }
 
     private var alarmAssetKey: String? = null

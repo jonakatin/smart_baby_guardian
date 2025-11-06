@@ -17,6 +17,10 @@ class PermissionService {
   ];
 
   static Future<bool> requestBluetoothPermissions() async {
+    // On Android the app already requests runtime permissions in MainActivity.
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return true;
+    }
     try {
       final bool? granted = await _channel.invokeMethod<bool>(
         'request',
