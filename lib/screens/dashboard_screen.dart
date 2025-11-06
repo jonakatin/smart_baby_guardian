@@ -72,10 +72,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             final double distance = reading?.distance ?? double.infinity;
             final DateTime? timestamp = reading?.timestamp;
 
-            const double cautionTempThreshold = 37;
-            const double dangerTempThreshold = 38.5;
-            const double cautionDistanceThreshold = 25;
-            const double dangerDistanceThreshold = 15;
+            const double cautionTempThreshold = 26;
+            const double dangerTempThreshold = 27.0;
+            const double cautionDistanceThreshold = 15;
+            const double dangerDistanceThreshold = 10;
 
             final bool cautionTemp =
                 reading != null && temperature >= cautionTempThreshold;
