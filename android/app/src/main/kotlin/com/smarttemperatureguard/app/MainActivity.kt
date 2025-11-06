@@ -3,17 +3,13 @@ package com.smarttemperatureguard.app
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
-import android.os.VibratorManager
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -25,32 +21,19 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     companion object {
         private const val TAG = "MainActivity"
-        private const val PERMISSIONS_CHANNEL = "com.smarttemperatureguard/permissions"
-        private const val ALARM_CHANNEL = "com.smarttemperatureguard/alarm"
-        private const val TORCH_CHANNEL = "com.smarttemperatureguard/torch"
-        private const val REQUEST_CODE_PERMISSIONS = 123
-        private const val TORCH_TOGGLE_INTERVAL_MS = 167L
-        private val VIBRATION_PATTERN = longArrayOf(0L, 500L, 200L, 500L)
+        private const val METHOD_CHANNEL = "com.smarttemperatureguard/alarm"
+        private const val PERMISSION_REQUEST_CODE = 1001
+        private const val ALARM_ASSET_PATH = "assets/sounds/high_alarm.wav"
     }
 
-    private val requiredPermissions: Array<String> by lazy { buildPermissionList() }
-
-    private var permissionsResult: MethodChannel.Result? = null
-    private var autoPermissionRequestActive: Boolean = false
     private var alarmAssetKey: String? = null
     private var mediaPlayer: MediaPlayer? = null
     private var vibrator: Vibrator? = null
-    private var cameraManager: CameraManager? = null
-    private var torchCameraId: String? = null
-    private var torchHandler: Handler? = null
-    private var torchRunnable: Runnable? = null
-    private var torchBlinking: Boolean = false
-    private var torchState: Boolean = false
+    private var cameraId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        cameraManager = getSystemService(Context.CAMERA_SERVICE) as? CameraManager
-        vibrator = obtainVibrator()
+        vibrator = getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
         requestAllPermissions()
     }
 
@@ -60,165 +43,76 @@ class MainActivity : FlutterActivity() {
             val loader = FlutterLoader()
             loader.startInitialization(applicationContext)
             loader.ensureInitializationComplete(applicationContext, null)
-            loader.getLookupKeyForAsset("assets/sounds/high_alarm.wav")
+            loader.getLookupKeyForAsset(ALARM_ASSET_PATH)
         } catch (exception: Exception) {
             Log.e(TAG, "Unable to resolve alarm asset key", exception)
             null
         }
 
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, PERMISSIONS_CHANNEL)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, METHOD_CHANNEL)
             .setMethodCallHandler { call, result ->
-                try {
-                    when (call.method) {
-                        "checkAndRequest" -> handlePermissionRequest(result)
-                        else -> result.notImplemented()
+                when (call.method) {
+                    "triggerAlarm" -> {
+                        playAlarm()
+                        vibratePattern()
+                        toggleFlashlight(true)
+                        result.success(true)
                     }
-                } catch (exception: Exception) {
-                    Log.e(TAG, "Permission channel failure", exception)
-                    result.error("PERMISSION_ERROR", exception.message, null)
+                    "stopAlarm" -> {
+                        stopAlarm()
+                        stopVibration()
+                        toggleFlashlight(false)
+                        result.success(true)
+                    }
+                    else -> result.notImplemented()
                 }
             }
-
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, ALARM_CHANNEL)
-            .setMethodCallHandler { call, result ->
-                try {
-                    when (call.method) {
-                        "playAlarm" -> {
-                            if (playAlarm()) {
-                                result.success(null)
-                            } else {
-                                result.error("ALARM_ERROR", "Failed to start alarm", null)
-                            }
-                        }
-
-                        "stopAlarm" -> {
-                            stopAlarm()
-                            result.success(null)
-                        }
-
-                        "startVibration" -> {
-                            if (startVibration()) {
-                                result.success(null)
-                            } else {
-                                result.error("VIBRATION_ERROR", "Vibrator unavailable", null)
-                            }
-                        }
-
-                        "stopVibration" -> {
-                            stopVibration()
-                            result.success(null)
-                        }
-
-                        else -> result.notImplemented()
-                    }
-                } catch (exception: Exception) {
-                    Log.e(TAG, "Alarm channel failure", exception)
-                    result.error("ALARM_ERROR", exception.message, null)
-                }
-            }
-
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, TORCH_CHANNEL)
-            .setMethodCallHandler { call, result ->
-                try {
-                    when (call.method) {
-                        "flashOn" -> {
-                            if (startTorchBlinking()) {
-                                result.success(null)
-                            } else {
-                                result.error("TORCH_ERROR", "Torch unavailable", null)
-                            }
-                        }
-
-                        "flashOff" -> {
-                            stopTorchBlinking()
-                            result.success(null)
-                        }
-
-                        else -> result.notImplemented()
-                    }
-                } catch (exception: Exception) {
-                    Log.e(TAG, "Torch channel failure", exception)
-                    result.error("TORCH_ERROR", exception.message, null)
-                }
-            }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        if (requestCode == REQUEST_CODE_PERMISSIONS) {
-            val granted = grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }
-            autoPermissionRequestActive = false
-            permissionsResult?.success(granted)
-            permissionsResult = null
-        } else {
-            super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        }
     }
 
     override fun onPause() {
-        stopAlarm()
-        stopTorchBlinking()
-        stopVibration()
         super.onPause()
+        stopAlarm()
+        stopVibration()
+        toggleFlashlight(false)
     }
 
     override fun onDestroy() {
+        super.onDestroy()
         stopAlarm()
         stopVibration()
-        stopTorchBlinking()
-        super.onDestroy()
-    }
-
-    private fun handlePermissionRequest(result: MethodChannel.Result) {
-        val missing = requiredPermissions.filter {
-            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
-        }
-        if (missing.isEmpty()) {
-            result.success(true)
-            return
-        }
-        if (autoPermissionRequestActive || permissionsResult != null) {
-            result.error("IN_PROGRESS", "Permission request in progress", null)
-            return
-        }
-        permissionsResult = result
-        try {
-            ActivityCompat.requestPermissions(this, missing.toTypedArray(), REQUEST_CODE_PERMISSIONS)
-        } catch (exception: Exception) {
-            permissionsResult = null
-            Log.e(TAG, "Failed to request permissions", exception)
-            result.error("PERMISSION_ERROR", exception.message, null)
-        }
+        toggleFlashlight(false)
     }
 
     private fun requestAllPermissions() {
-        val missing = requiredPermissions.filter {
+        val permissions = arrayOf(
+            Manifest.permission.CAMERA,
+            Manifest.permission.VIBRATE,
+            Manifest.permission.BLUETOOTH_CONNECT,
+            Manifest.permission.BLUETOOTH_SCAN,
+            Manifest.permission.BLUETOOTH_ADVERTISE,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        )
+        val missing = permissions.filter {
             ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
         }
-        if (missing.isEmpty()) {
-            return
-        }
-        try {
-            autoPermissionRequestActive = true
-            ActivityCompat.requestPermissions(this, missing.toTypedArray(), REQUEST_CODE_PERMISSIONS)
-        } catch (exception: Exception) {
-            autoPermissionRequestActive = false
-            Log.e(TAG, "Automatic permission request failed", exception)
+        if (missing.isNotEmpty()) {
+            ActivityCompat.requestPermissions(
+                this,
+                missing.toTypedArray(),
+                PERMISSION_REQUEST_CODE
+            )
         }
     }
 
-    private fun playAlarm(): Boolean {
-        val assetKey = alarmAssetKey ?: return false
+    private fun playAlarm() {
         if (mediaPlayer?.isPlaying == true) {
-            return true
+            return
         }
         stopAlarm()
-        return try {
-            applicationContext.assets.openFd(assetKey).use { descriptor ->
-                val player = MediaPlayer().apply {
+        val assetKey = alarmAssetKey ?: return
+        try {
+            applicationContext.assets.openFd(assetKey).use { afd ->
+                mediaPlayer = MediaPlayer().apply {
                     setAudioAttributes(
                         AudioAttributes.Builder()
                             .setUsage(AudioAttributes.USAGE_ALARM)
@@ -226,198 +120,68 @@ class MainActivity : FlutterActivity() {
                             .build()
                     )
                     isLooping = true
-                    setDataSource(descriptor.fileDescriptor, descriptor.startOffset, descriptor.length)
-                    setOnCompletionListener { completedPlayer ->
-                        completedPlayer.release()
-                        if (mediaPlayer === completedPlayer) {
-                            mediaPlayer = null
-                        }
-                    }
-                    setOnErrorListener { errorPlayer, what, extra ->
-                        Log.e(TAG, "MediaPlayer error while playing alarm: what=$what extra=$extra")
-                        try {
-                            errorPlayer.reset()
-                        } catch (resetException: Exception) {
-                            Log.e(TAG, "Failed to reset MediaPlayer after error", resetException)
-                        }
-                        errorPlayer.release()
-                        if (mediaPlayer === errorPlayer) {
-                            mediaPlayer = null
-                        }
-                        true
-                    }
+                    setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
                     prepare()
                     start()
                 }
-                mediaPlayer = player
             }
-            true
         } catch (exception: Exception) {
-            Log.e(TAG, "Unable to start alarm", exception)
-            false
+            Log.e(TAG, "Error playing alarm", exception)
         }
     }
 
     private fun stopAlarm() {
-        mediaPlayer?.let { player ->
+        mediaPlayer?.apply {
             try {
-                if (player.isPlaying) {
-                    player.stop()
+                if (isPlaying) {
+                    stop()
                 }
             } catch (exception: Exception) {
                 Log.e(TAG, "Error stopping alarm", exception)
             }
             try {
-                player.reset()
-            } catch (resetException: Exception) {
-                Log.e(TAG, "Failed to reset MediaPlayer", resetException)
-            }
-            try {
-                player.release()
-            } catch (releaseException: Exception) {
-                Log.e(TAG, "Failed to release MediaPlayer", releaseException)
+                release()
+            } catch (exception: Exception) {
+                Log.e(TAG, "Error releasing MediaPlayer", exception)
             }
         }
         mediaPlayer = null
     }
 
-    private fun buildPermissionList(): Array<String> {
-        val permissions = mutableListOf(
-            Manifest.permission.CAMERA,
-            Manifest.permission.VIBRATE,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        )
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            permissions += Manifest.permission.BLUETOOTH_CONNECT
-            permissions += Manifest.permission.BLUETOOTH_SCAN
-            permissions += Manifest.permission.BLUETOOTH_ADVERTISE
-        } else {
-            @Suppress("DEPRECATION")
-            permissions += Manifest.permission.BLUETOOTH
-            @Suppress("DEPRECATION")
-            permissions += Manifest.permission.BLUETOOTH_ADMIN
-        }
-        return permissions.toTypedArray()
-    }
-
-    private fun startVibration(): Boolean {
-        val vib = vibrator ?: obtainVibrator().also { vibrator = it }
-        if (vib == null) {
-            return false
-        }
-        return try {
+    private fun vibratePattern() {
+        val vib = vibrator ?: getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+        vibrator = vib
+        vib ?: return
+        try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val effect = VibrationEffect.createWaveform(VIBRATION_PATTERN, 0)
-                vib.vibrate(effect)
+                vib.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 400, 200, 400), 0))
             } else {
                 @Suppress("DEPRECATION")
-                vib.vibrate(VIBRATION_PATTERN, 0)
+                vib.vibrate(longArrayOf(0, 400, 200, 400), 0)
             }
-            true
         } catch (exception: Exception) {
-            Log.e(TAG, "Failed to start vibration", exception)
-            false
+            Log.e(TAG, "Error starting vibration", exception)
         }
     }
 
     private fun stopVibration() {
-        val vib = vibrator ?: return
         try {
-            vib.cancel()
+            vibrator?.cancel()
         } catch (exception: Exception) {
-            Log.e(TAG, "Failed to stop vibration", exception)
+            Log.e(TAG, "Error stopping vibration", exception)
         }
     }
 
-    private fun obtainVibrator(): Vibrator? {
-        return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val manager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-                manager?.defaultVibrator
-            } else {
-                @Suppress("DEPRECATION")
-                getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-            }
-        } catch (exception: Exception) {
-            Log.e(TAG, "Unable to access vibrator", exception)
-            null
+    private fun toggleFlashlight(on: Boolean) {
+        val manager = getSystemService(Context.CAMERA_SERVICE) as? CameraManager ?: return
+        if (cameraId == null) {
+            cameraId = manager.cameraIdList.firstOrNull()
         }
-    }
-
-    private fun startTorchBlinking(): Boolean {
-        if (!isTorchAvailable()) {
-            return false
-        }
-        if (torchBlinking) {
-            return true
-        }
-        val manager = cameraManager ?: return false
-        val cameraId = ensureTorchCameraId(manager) ?: return false
-        val handler = torchHandler ?: Handler(Looper.getMainLooper()).also { torchHandler = it }
-        torchBlinking = true
-        torchRunnable = object : Runnable {
-            override fun run() {
-                if (!torchBlinking) {
-                    return
-                }
-                try {
-                    torchState = !torchState
-                    manager.setTorchMode(cameraId, torchState)
-                    handler.postDelayed(this, TORCH_TOGGLE_INTERVAL_MS)
-                } catch (exception: Exception) {
-                    Log.e(TAG, "Torch toggle failed", exception)
-                    stopTorchBlinking()
-                }
-            }
-        }
-        torchRunnable?.let { handler.post(it) }
-        return true
-    }
-
-    private fun stopTorchBlinking() {
-        torchBlinking = false
-        torchState = false
-        torchRunnable?.let { runnable ->
-            torchHandler?.removeCallbacks(runnable)
-        }
-        torchRunnable = null
+        val id = cameraId ?: return
         try {
-            val manager = cameraManager
-            val cameraId = torchCameraId
-            if (manager != null && cameraId != null) {
-                manager.setTorchMode(cameraId, false)
-            }
+            manager.setTorchMode(id, on)
         } catch (exception: Exception) {
-            Log.e(TAG, "Failed to disable torch", exception)
-        }
-    }
-
-    private fun isTorchAvailable(): Boolean {
-        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)) {
-            return false
-        }
-        return cameraManager != null
-    }
-
-    private fun ensureTorchCameraId(manager: CameraManager): String? {
-        torchCameraId?.let { return it }
-        return try {
-            for (id in manager.cameraIdList) {
-                val characteristics = manager.getCameraCharacteristics(id)
-                val hasFlash = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
-                val facing = characteristics.get(CameraCharacteristics.LENS_FACING)
-                if (hasFlash && facing == CameraCharacteristics.LENS_FACING_BACK) {
-                    torchCameraId = id
-                    return id
-                }
-                if (hasFlash && torchCameraId == null) {
-                    torchCameraId = id
-                }
-            }
-            torchCameraId
-        } catch (exception: Exception) {
-            Log.e(TAG, "Failed to find torch camera", exception)
-            null
+            Log.e(TAG, "Flashlight error", exception)
         }
     }
 }
