@@ -19,6 +19,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.embedding.engine.loader.FlutterLoader
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
@@ -32,21 +33,7 @@ class MainActivity : FlutterActivity() {
         private val VIBRATION_PATTERN = longArrayOf(0L, 500L, 200L, 500L)
     }
 
-    private val requiredPermissions: Array<String> by lazy {
-        val permissions = mutableListOf(
-            Manifest.permission.CAMERA,
-            Manifest.permission.VIBRATE,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        )
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            permissions += Manifest.permission.BLUETOOTH_CONNECT
-            permissions += Manifest.permission.BLUETOOTH_SCAN
-        } else {
-            permissions += Manifest.permission.BLUETOOTH
-            permissions += Manifest.permission.BLUETOOTH_ADMIN
-        }
-        permissions.toTypedArray()
-    }
+    private val requiredPermissions: Array<String> by lazy { buildPermissionList() }
 
     private var permissionsResult: MethodChannel.Result? = null
     private var autoPermissionRequestActive: Boolean = false
@@ -64,13 +51,16 @@ class MainActivity : FlutterActivity() {
         super.onCreate(savedInstanceState)
         cameraManager = getSystemService(Context.CAMERA_SERVICE) as? CameraManager
         vibrator = obtainVibrator()
-        checkAndRequestPermissions()
+        requestAllPermissions()
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         alarmAssetKey = try {
-            flutterEngine.dartExecutor.assets.lookupKeyForAsset("assets/sounds/high_alarm.wav")
+            val loader = FlutterLoader()
+            loader.startInitialization(applicationContext)
+            loader.ensureInitializationComplete(applicationContext, null)
+            loader.getLookupKeyForAsset("assets/sounds/high_alarm.wav")
         } catch (exception: Exception) {
             Log.e(TAG, "Unable to resolve alarm asset key", exception)
             null
@@ -169,6 +159,7 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onPause() {
+        stopAlarm()
         stopTorchBlinking()
         stopVibration()
         super.onPause()
@@ -176,7 +167,6 @@ class MainActivity : FlutterActivity() {
 
     override fun onDestroy() {
         stopAlarm()
-        releaseMediaPlayer()
         stopVibration()
         stopTorchBlinking()
         super.onDestroy()
@@ -204,7 +194,7 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    private fun checkAndRequestPermissions() {
+    private fun requestAllPermissions() {
         val missing = requiredPermissions.filter {
             ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
         }
@@ -222,20 +212,44 @@ class MainActivity : FlutterActivity() {
 
     private fun playAlarm(): Boolean {
         val assetKey = alarmAssetKey ?: return false
+        if (mediaPlayer?.isPlaying == true) {
+            return true
+        }
+        stopAlarm()
         return try {
-            assets.openFd(assetKey).use { descriptor ->
-                val player = mediaPlayer ?: MediaPlayer().also { mediaPlayer = it }
-                player.reset()
-                player.setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ALARM)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build()
-                )
-                player.isLooping = true
-                player.setDataSource(descriptor.fileDescriptor, descriptor.startOffset, descriptor.length)
-                player.prepare()
-                player.start()
+            applicationContext.assets.openFd(assetKey).use { descriptor ->
+                val player = MediaPlayer().apply {
+                    setAudioAttributes(
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_ALARM)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build()
+                    )
+                    isLooping = true
+                    setDataSource(descriptor.fileDescriptor, descriptor.startOffset, descriptor.length)
+                    setOnCompletionListener { completedPlayer ->
+                        completedPlayer.release()
+                        if (mediaPlayer === completedPlayer) {
+                            mediaPlayer = null
+                        }
+                    }
+                    setOnErrorListener { errorPlayer, what, extra ->
+                        Log.e(TAG, "MediaPlayer error while playing alarm: what=$what extra=$extra")
+                        try {
+                            errorPlayer.reset()
+                        } catch (resetException: Exception) {
+                            Log.e(TAG, "Failed to reset MediaPlayer after error", resetException)
+                        }
+                        errorPlayer.release()
+                        if (mediaPlayer === errorPlayer) {
+                            mediaPlayer = null
+                        }
+                        true
+                    }
+                    prepare()
+                    start()
+                }
+                mediaPlayer = player
             }
             true
         } catch (exception: Exception) {
@@ -245,30 +259,45 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun stopAlarm() {
-        val player = mediaPlayer ?: return
-        try {
-            if (player.isPlaying) {
-                player.stop()
-            }
-        } catch (exception: Exception) {
-            Log.e(TAG, "Error stopping alarm", exception)
-        }
-    }
-
-    private fun releaseMediaPlayer() {
         mediaPlayer?.let { player ->
             try {
-                player.reset()
+                if (player.isPlaying) {
+                    player.stop()
+                }
             } catch (exception: Exception) {
-                Log.e(TAG, "Failed to reset MediaPlayer", exception)
+                Log.e(TAG, "Error stopping alarm", exception)
+            }
+            try {
+                player.reset()
+            } catch (resetException: Exception) {
+                Log.e(TAG, "Failed to reset MediaPlayer", resetException)
             }
             try {
                 player.release()
-            } catch (exception: Exception) {
-                Log.e(TAG, "Failed to release MediaPlayer", exception)
+            } catch (releaseException: Exception) {
+                Log.e(TAG, "Failed to release MediaPlayer", releaseException)
             }
         }
         mediaPlayer = null
+    }
+
+    private fun buildPermissionList(): Array<String> {
+        val permissions = mutableListOf(
+            Manifest.permission.CAMERA,
+            Manifest.permission.VIBRATE,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            permissions += Manifest.permission.BLUETOOTH_CONNECT
+            permissions += Manifest.permission.BLUETOOTH_SCAN
+            permissions += Manifest.permission.BLUETOOTH_ADVERTISE
+        } else {
+            @Suppress("DEPRECATION")
+            permissions += Manifest.permission.BLUETOOTH
+            @Suppress("DEPRECATION")
+            permissions += Manifest.permission.BLUETOOTH_ADMIN
+        }
+        return permissions.toTypedArray()
     }
 
     private fun startVibration(): Boolean {
