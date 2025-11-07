@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../models/reading.dart';
+import '../models/sensor_record.dart';
 import 'alarm_handler.dart';
 import 'permission_service.dart';
 import 'storage_service.dart';
@@ -24,7 +24,7 @@ class AlertService extends ChangeNotifier {
   bool _soundEnabled = true;
   bool _flashEnabled = true;
   bool _vibrateEnabled = true;
-  double _volume = 1;
+  double _volume = 1.0;
 
   bool get soundEnabled => _soundEnabled;
   bool get flashEnabled => _flashEnabled;
@@ -32,11 +32,17 @@ class AlertService extends ChangeNotifier {
   bool get alertActive => _alertActive;
   double get volume => _volume;
 
-  Future<void> handleReading(Reading reading) async {
-    final bool needsAlert =
-        reading.temperature > 27 && reading.distance < 15;
-    if (!needsAlert) {
-      _acknowledgedUntil = null;
+  double get temperatureThreshold => _storage.temperatureThreshold;
+  double get distanceThreshold => _storage.distanceThreshold;
+  String? get soundFilePath => _storage.soundFilePath;
+
+  Future<void> handleReading(SensorRecord record) async {
+    final bool trigger = record.temperature > temperatureThreshold &&
+        record.distance < distanceThreshold;
+    if (!trigger) {
+      if (record.distance > distanceThreshold) {
+        _acknowledgedUntil = null;
+      }
       await _stopAlert();
       return;
     }
@@ -57,14 +63,9 @@ class AlertService extends ChangeNotifier {
   Future<void> _startAlert() async {
     if (!_alertActive) {
       _alertActive = true;
-      if (_flashEnabled) {
-        await _toggleTorch(true);
-      }
-      await _updateAlarmOutputs();
       notifyListeners();
-      return;
     }
-
+    await _ensurePermissions();
     await _updateAlarmOutputs();
     if (_flashEnabled) {
       await _toggleTorch(true);
@@ -105,7 +106,14 @@ class AlertService extends ChangeNotifier {
     _flashEnabled = value;
     _storage.flashAlerts = value;
     if (_alertActive) {
-      unawaited(_toggleTorch(value));
+      unawaited(() async {
+        if (value) {
+          await _ensurePermissions(requestTorch: true);
+          await _toggleTorch(true);
+        } else {
+          await _toggleTorch(false);
+        }
+      }());
     }
     notifyListeners();
   }
@@ -129,8 +137,26 @@ class AlertService extends ChangeNotifier {
     }
     _volume = clamped;
     _storage.alarmVolume = _volume;
-    if (_alertActive && _soundEnabled) {
-      unawaited(_alarmHandler.updateVolume(_volume));
+    if (_alertActive) {
+      unawaited(_updateAlarmOutputs());
+    }
+    notifyListeners();
+  }
+
+  void setTemperatureThreshold(double value) {
+    _storage.temperatureThreshold = value;
+    notifyListeners();
+  }
+
+  void setDistanceThreshold(double value) {
+    _storage.distanceThreshold = value;
+    notifyListeners();
+  }
+
+  Future<void> setSoundFilePath(String? path) async {
+    _storage.soundFilePath = path;
+    if (_alertActive) {
+      await _updateAlarmOutputs();
     }
     notifyListeners();
   }
@@ -138,12 +164,8 @@ class AlertService extends ChangeNotifier {
   void reloadFromStorage() {
     _loadFromStorage();
     if (_alertActive) {
-      if (_flashEnabled) {
-        unawaited(_toggleTorch(true));
-      } else {
-        unawaited(_toggleTorch(false));
-      }
       unawaited(_updateAlarmOutputs());
+      unawaited(_toggleTorch(_flashEnabled));
     }
     notifyListeners();
   }
@@ -157,12 +179,12 @@ class AlertService extends ChangeNotifier {
     if (!_alertActive) {
       return;
     }
-    if (!_soundEnabled && !_vibrateEnabled) {
-      await _alarmHandler.stopAlarm();
-      return;
-    }
-    final double volume = _soundEnabled ? _volume : 0;
-    await _alarmHandler.startAlarm(volume: volume, vibrate: _vibrateEnabled);
+    final String? path = _soundEnabled ? _storage.soundFilePath : null;
+    await _alarmHandler.startAlarm(
+      soundPath: path,
+      volume: _volume,
+      vibrate: _vibrateEnabled,
+    );
   }
 
   Future<void> _toggleTorch(bool enable) async {
@@ -171,15 +193,24 @@ class AlertService extends ChangeNotifier {
         return;
       }
       if (enable) {
-        final bool granted = await PermissionService.requestCameraPermission();
-        if (!granted) {
-          return;
-        }
         await _torchService.enableTorch();
       } else {
         await _torchService.disableTorch();
       }
     } catch (_) {}
+  }
+
+  Future<void> _ensurePermissions({bool requestTorch = false}) async {
+    await PermissionService.requestBluetoothPermissions();
+    if (_soundEnabled && _storage.soundFilePath != null) {
+      await PermissionService.requestStoragePermission();
+    }
+    if (_vibrateEnabled) {
+      await PermissionService.requestVibrationPermission();
+    }
+    if (requestTorch || _flashEnabled) {
+      await PermissionService.requestCameraPermission();
+    }
   }
 
   @override

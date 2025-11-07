@@ -1,14 +1,15 @@
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import '../models/reading.dart';
+
+import '../models/sensor_record.dart';
 
 class StorageService extends ChangeNotifier {
   StorageService._();
 
   static final StorageService instance = StorageService._();
 
-  static const String _readingsBoxName = 'readings_box';
+  static const String _historyBoxName = 'sensor_history';
   static const String _settingsBoxName = 'settings_box';
 
   static const String _themeModeKey = 'themeMode';
@@ -19,37 +20,57 @@ class StorageService extends ChangeNotifier {
   static const String _soundAlertsKey = 'soundAlerts';
   static const String _flashAlertsKey = 'flashAlerts';
   static const String _vibrateAlertsKey = 'vibrateAlerts';
+  static const String _temperatureThresholdKey = 'temperatureThreshold';
+  static const String _distanceThresholdKey = 'distanceThreshold';
+  static const String _soundFilePathKey = 'soundFilePath';
 
-  late Box<Reading> _readingsBox;
+  static const int _maxRecords = 500;
+
+  late Box<SensorRecord> _historyBox;
   late Box<dynamic> _settingsBox;
 
-  ValueListenable<Box<Reading>> get listenable => _readingsBox.listenable();
+  ValueListenable<Box<SensorRecord>> get listenable => _historyBox.listenable();
   Box<dynamic> get settingsBox => _settingsBox;
 
   Future<void> init() async {
-    if (!Hive.isAdapterRegistered(ReadingAdapter().typeId)) {
-      Hive.registerAdapter(ReadingAdapter());
+    if (!Hive.isAdapterRegistered(SensorRecordAdapter().typeId)) {
+      Hive.registerAdapter(SensorRecordAdapter());
     }
-    _readingsBox = await Hive.openBox<Reading>(_readingsBoxName);
+    _historyBox = await Hive.openBox<SensorRecord>(_historyBoxName);
     _settingsBox = await Hive.openBox<dynamic>(_settingsBoxName);
   }
 
-  Future<void> addReading(Reading reading) async {
-    await _readingsBox.add(reading);
+  Future<void> addRecord(SensorRecord record) async {
+    await _historyBox.add(record);
+    if (_historyBox.length > _maxRecords) {
+      final overflow = _historyBox.length - _maxRecords;
+      if (overflow > 0) {
+        final keys = _historyBox.keys.cast<int>().toList()..sort();
+        await _historyBox.deleteAll(keys.take(overflow));
+      }
+    }
+    notifyListeners();
   }
 
-  List<Reading> getReadings() {
-    final items = _readingsBox.values.toList();
-    items.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    return items;
+  List<SensorRecord> getRecords({DateTime? since}) {
+    final items = _historyBox.values.toList();
+    items.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    if (since == null) {
+      return items;
+    }
+    return items
+        .where((record) => !record.timestamp.isBefore(since))
+        .toList();
   }
 
-  Future<void> clear() async {
-    await _readingsBox.clear();
+  Future<void> clearHistory() async {
+    await _historyBox.clear();
+    notifyListeners();
   }
 
   ThemeMode get themeMode {
-    final stored = _settingsBox.get(_themeModeKey, defaultValue: ThemeMode.system.name) as String;
+    final stored =
+        _settingsBox.get(_themeModeKey, defaultValue: ThemeMode.system.name) as String;
     return ThemeMode.values.firstWhere(
       (mode) => mode.name == stored,
       orElse: () => ThemeMode.system,
@@ -108,6 +129,33 @@ class StorageService extends ChangeNotifier {
 
   set vibrateAlerts(bool value) {
     _settingsBox.put(_vibrateAlertsKey, value);
+    notifyListeners();
+  }
+
+  double get temperatureThreshold =>
+      (_settingsBox.get(_temperatureThresholdKey) as double?) ?? 27.0;
+
+  set temperatureThreshold(double value) {
+    _settingsBox.put(_temperatureThresholdKey, value);
+    notifyListeners();
+  }
+
+  double get distanceThreshold =>
+      (_settingsBox.get(_distanceThresholdKey) as double?) ?? 15.0;
+
+  set distanceThreshold(double value) {
+    _settingsBox.put(_distanceThresholdKey, value);
+    notifyListeners();
+  }
+
+  String? get soundFilePath => _settingsBox.get(_soundFilePathKey) as String?;
+
+  set soundFilePath(String? path) {
+    if (path == null) {
+      _settingsBox.delete(_soundFilePathKey);
+    } else {
+      _settingsBox.put(_soundFilePathKey, path);
+    }
     notifyListeners();
   }
 

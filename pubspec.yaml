@@ -13,10 +13,14 @@ dependencies:
   flutter_bluetooth_serial: ^0.4.0
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  vibration: ^3.1.4
   intl: ^0.20.2
-  torch_light: ^1.0.0
   google_fonts: ^6.2.1
+  file_picker: ^8.0.3
+  just_audio: ^0.9.38
+  permission_handler: ^11.3.1
+  path_provider: ^2.1.3
+  path: ^1.9.0
+  fl_chart: ^0.68.0
 
 dev_dependencies:
   flutter_lints: ^6.0.0
@@ -28,7 +32,6 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icon/icon.png
-    - assets/sounds/high_alarm.mp3
 
 flutter_launcher_icons:
   android: true

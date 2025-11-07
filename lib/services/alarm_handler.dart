@@ -1,5 +1,9 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:vibration/vibration.dart';
+import 'package:just_audio/just_audio.dart';
 
 class AlarmHandler {
   AlarmHandler._();
@@ -7,69 +11,98 @@ class AlarmHandler {
   static final AlarmHandler instance = AlarmHandler._();
 
   static const MethodChannel _channel =
-      MethodChannel('com.smartbabyguard/alarm');
-  static const String _alarmAsset = 'sounds/high_alarm.mp3';
+      MethodChannel('com.smarttemperatureguard/alarm');
+
+  final AudioPlayer _player = AudioPlayer();
   bool _initialized = false;
+  String? _activeSource;
 
   Future<void> init() async {
     if (_initialized) {
       return;
     }
-    try {
-      await _channel
-          .invokeMethod('initialize', <String, Object>{'asset': _alarmAsset});
-      _initialized = true;
-    } on PlatformException {
-      // Ignore and rely on best-effort behaviour on unsupported platforms.
-    }
+    await _player.setLoopMode(LoopMode.one);
+    _initialized = true;
   }
 
-  Future<void> startAlarm({double volume = 1.0, bool vibrate = true}) async {
-    final double clamped = volume.clamp(0.0, 1.0);
-    try {
-      await _channel.invokeMethod('start', <String, Object>{
-        'asset': _alarmAsset,
-        'volume': clamped,
-      });
-    } on PlatformException {
-      // Ignore failures to keep the alarm workflow responsive.
+  Future<void> startAlarm({
+    String? soundPath,
+    double volume = 1.0,
+    bool vibrate = true,
+  }) async {
+    await init();
+    final double clamped = volume.clamp(0, 1).toDouble();
+    await _player.setVolume(clamped);
+
+    if (soundPath != null && soundPath.isNotEmpty) {
+      await _playSound(soundPath);
+    } else {
+      await _player.stop();
+      _activeSource = null;
     }
-    if (vibrate && (await Vibration.hasVibrator())) {
-      Vibration.vibrate(
-        pattern: const [300, 200, 300, 200],
-        intensities: const [128, 0, 128, 0],
-        repeat: 0,
-      );
+
+    if (vibrate) {
+      try {
+        await _channel.invokeMethod('startVibration');
+      } on PlatformException catch (error) {
+        debugPrint('Vibration start failed: ${error.message}');
+      }
+    } else {
+      await _stopVibration();
     }
   }
 
   Future<void> updateVolume(double volume) async {
-    final double clamped = volume.clamp(0.0, 1.0);
-    try {
-      await _channel
-          .invokeMethod('setVolume', <String, Object>{'volume': clamped});
-    } on PlatformException {
-      // No-op on unsupported platforms.
-    }
+    final double clamped = volume.clamp(0, 1).toDouble();
+    await _player.setVolume(clamped);
   }
 
   Future<void> stopAlarm() async {
-    try {
-      await _channel.invokeMethod('stop');
-    } on PlatformException {
-      // Ignore failures.
-    }
-    if (await Vibration.hasVibrator()) {
-      Vibration.cancel();
-    }
+    await _player.stop();
+    _activeSource = null;
+    await _stopVibration();
   }
 
   Future<void> dispose() async {
     await stopAlarm();
+    await _player.dispose();
+  }
+
+  Future<void> _playSound(String path) async {
+    if (_activeSource == path && _player.playing) {
+      return;
+    }
     try {
-      await _channel.invokeMethod('dispose');
-    } on PlatformException {
-      // Ignored.
+      if (_activeSource != path) {
+        await _player.stop();
+        if (path.startsWith('content://')) {
+          await _player.setAudioSource(AudioSource.uri(Uri.parse(path)));
+        } else {
+          final file = File(path);
+          if (await file.exists()) {
+            await _player.setAudioSource(AudioSource.uri(Uri.file(file.path)));
+          } else {
+            await _player.setAudioSource(AudioSource.uri(Uri.parse(path)));
+          }
+        }
+        _activeSource = path;
+      }
+      if (!_player.playing) {
+        await _player.seek(Duration.zero);
+        await _player.play();
+      }
+    } catch (error, stackTrace) {
+      debugPrint('Unable to play alarm sound: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      _activeSource = null;
+    }
+  }
+
+  Future<void> _stopVibration() async {
+    try {
+      await _channel.invokeMethod('stopVibration');
+    } on PlatformException catch (error) {
+      debugPrint('Vibration stop failed: ${error.message}');
     }
   }
 }

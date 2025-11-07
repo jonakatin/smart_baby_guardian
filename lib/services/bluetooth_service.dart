@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
-import '../models/reading.dart';
+
+import '../models/sensor_record.dart';
 import 'storage_service.dart';
 
 class BluetoothConnectionException implements Exception {
@@ -20,22 +23,24 @@ class BluetoothService extends ChangeNotifier {
   static const String targetDeviceName = 'SmartTemperatureGuard';
 
   final FlutterBluetoothSerial _bluetooth = FlutterBluetoothSerial.instance;
+  final StorageService _storage = StorageService.instance;
+
   BluetoothConnection? _connection;
   BluetoothDevice? _device;
 
-  final StreamController<Reading> _dataController =
-      StreamController.broadcast();
+  final StreamController<SensorRecord> _dataController =
+      StreamController<SensorRecord>.broadcast();
   StreamSubscription<Uint8List>? _inputSubscription;
   String _incomingBuffer = '';
 
-  Reading? _latestReading;
+  SensorRecord? _latestRecord;
   String? _bannerMessage;
   bool _isConnecting = false;
   bool _autoReconnecting = false;
   bool _manualDisconnect = false;
 
-  Stream<Reading> get readingsStream => _dataController.stream;
-  Reading? get latestReading => _latestReading;
+  Stream<SensorRecord> get readingsStream => _dataController.stream;
+  SensorRecord? get latestReading => _latestRecord;
   BluetoothDevice? get device => _device;
   bool get isConnected => _connection?.isConnected ?? false;
   bool get isConnecting => _isConnecting;
@@ -106,31 +111,34 @@ class BluetoothService extends ChangeNotifier {
   }
 
   void handleBluetoothData(String data) {
-    if (data.contains('TEMP:') && data.contains('DIST:')) {
-      final parts = data.split(',');
-      if (parts.length >= 2) {
-        final tempPart = parts[0];
-        final distPart = parts[1];
-        final temp =
-            double.tryParse(tempPart.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
-        final dist =
-            double.tryParse(distPart.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
-        if (temp > 0 && dist > 0) {
-          _onNewReading(temp, dist);
-        }
-      }
+    if (!data.contains('TEMP:') || !data.contains('DIST:')) {
+      return;
     }
+    final parts = data.split(',');
+    if (parts.length < 2) {
+      return;
+    }
+    final String tempPart = parts[0];
+    final String distPart = parts[1];
+    final double? temp =
+        double.tryParse(tempPart.replaceAll(RegExp(r'[^0-9\.-]'), ''));
+    final double? dist =
+        double.tryParse(distPart.replaceAll(RegExp(r'[^0-9\.-]'), ''));
+    if (temp == null || dist == null) {
+      return;
+    }
+    _onNewReading(temp, dist);
   }
 
   void _onNewReading(double temperature, double distance) {
-    final reading = Reading(
+    final record = SensorRecord(
+      temperature: double.parse(temperature.toStringAsFixed(2)),
+      distance: double.parse(distance.toStringAsFixed(2)),
       timestamp: DateTime.now(),
-      temperature: double.parse(temperature.toStringAsFixed(1)),
-      distance: double.parse(distance.toStringAsFixed(1)),
     );
-    _latestReading = reading;
-    _dataController.add(reading);
-    unawaited(StorageService.instance.addReading(reading));
+    _latestRecord = record;
+    _dataController.add(record);
+    unawaited(_storage.addRecord(record));
     notifyListeners();
   }
 
@@ -213,8 +221,7 @@ class BluetoothService extends ChangeNotifier {
       handleBluetoothData(message);
       processedIndex = match.end;
     }
-    _incomingBuffer = _incomingBuffer
-        .substring(processedIndex)
-        .replaceFirst(RegExp(r'^[\r\n]+'), '');
+    _incomingBuffer =
+        _incomingBuffer.substring(processedIndex).replaceFirst(RegExp(r'^[\r\n]+'), '');
   }
 }

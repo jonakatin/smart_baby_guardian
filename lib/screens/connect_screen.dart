@@ -29,6 +29,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
 
   Future<void> _loadDevices() async {
     final bluetooth = context.read<BluetoothService>();
+    await PermissionService.requestBluetoothPermissions();
     setState(() {
       _devicesFuture = bluetooth.discover();
     });

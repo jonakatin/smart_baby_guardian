@@ -1,7 +1,14 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+
 import '../services/alert_service.dart';
 import '../services/bluetooth_service.dart';
+import '../services/permission_service.dart';
 import '../services/storage_service.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -12,155 +19,169 @@ class SettingsScreen extends StatelessWidget {
     final storage = context.watch<StorageService>();
     final bluetooth = context.watch<BluetoothService>();
     final alert = context.watch<AlertService>();
+    final String soundPath = alert.soundFilePath ?? 'None selected';
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         children: [
-          const ListTile(title: Text('Appearance')),
-          Card(
-            child: Column(
-              children: [
-                _buildThemeOption(
-                  context: context,
-                  mode: ThemeMode.system,
-                  selectedMode: storage.themeMode,
-                  label: 'System',
-                  icon: Icons.phone_iphone,
-                  onSelected: (mode) => storage.themeMode = mode,
+          _SettingsSection(
+            title: 'Alerts',
+            children: [
+              ListTile(
+                title: const Text('Alarm volume'),
+                subtitle: Slider(
+                  value: alert.volume,
+                  min: 0,
+                  max: 1,
+                  divisions: 10,
+                  label: '${(alert.volume * 100).round()}%',
+                  onChanged: alert.setVolume,
                 ),
-                _buildThemeOption(
-                  context: context,
-                  mode: ThemeMode.light,
-                  selectedMode: storage.themeMode,
-                  label: 'Light',
-                  icon: Icons.light_mode,
-                  onSelected: (mode) => storage.themeMode = mode,
-                ),
-                _buildThemeOption(
-                  context: context,
-                  mode: ThemeMode.dark,
-                  selectedMode: storage.themeMode,
-                  label: 'Dark',
-                  icon: Icons.dark_mode,
-                  onSelected: (mode) => storage.themeMode = mode,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          const ListTile(title: Text('Alerts')),
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  title: const Text('Alarm volume'),
-                  subtitle: Slider(
-                    value: alert.volume,
-                    min: 0,
-                    max: 1,
-                    divisions: 10,
-                    onChanged: alert.setVolume,
-                  ),
-                  trailing: Text('${(alert.volume * 100).round()}%'),
-                ),
-                SwitchListTile(
-                  title: const Text('Sound'),
-                  value: alert.soundEnabled,
-                  onChanged: alert.setSoundEnabled,
-                ),
-                SwitchListTile(
-                  title: const Text('Flash'),
-                  value: alert.flashEnabled,
-                  onChanged: alert.setFlashEnabled,
-                ),
-                SwitchListTile(
-                  title: const Text('Vibration'),
-                  value: alert.vibrateEnabled,
-                  onChanged: alert.setVibrateEnabled,
-                ),
-                SwitchListTile(
-                  title: const Text('Auto-acknowledge'),
-                  value: storage.autoAck,
-                  onChanged: (value) => storage.autoAck = value,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          const ListTile(title: Text('Bluetooth')),
-          Card(
-            child: Column(
-              children: [
-                SwitchListTile(
-                  title: const Text('Auto-connect last device'),
-                  value: storage.autoConnect,
-                  onChanged: (value) => storage.autoConnect = value,
-                ),
-                ListTile(
-                  title: const Text('Data update rate'),
-                  subtitle: Wrap(
-                    spacing: 8,
-                    children: [1, 2, 5].map((seconds) {
-                      final selected = storage.updateRateSec == seconds;
-                      return ChoiceChip(
-                        label: Text('${seconds}s'),
-                        selected: selected,
-                        onSelected: (_) => storage.updateRateSec = seconds,
-                      );
-                    }).toList(),
-                  ),
-                ),
-                if (bluetooth.isConnected)
-                  Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: FilledButton.icon(
-                      onPressed: bluetooth.disconnect,
-                      icon: const Icon(Icons.link_off),
-                      label: const Text('Disconnect'),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          const ListTile(title: Text('Data')),
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.ios_share),
-                  title: const Text('Export data'),
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Data export coming soon.')),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.restore),
-                  title: const Text('Reset to defaults'),
-                  onTap: () => _confirmReset(context),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          const ListTile(title: Text('About')),
-          Card(
-            child: const ListTile(
-              title: Text('Smart Temperature Guard'),
-              subtitle: Text(
-                'Version 2.1.0\n'
-                'Supervisor: Dr. Mary Nsabagwa\n'
-                'Group 28: Wambui Mariam, Johnson Makmot Kabira, Mwesigwa Isaac, '
-                'Bataringaya Bridget, Jonathan Katongole',
+                trailing: Text('${(alert.volume * 100).round()}%'),
               ),
-              trailing: Icon(Icons.info_outline),
-            ),
+              SwitchListTile(
+                title: const Text('Sound'),
+                value: alert.soundEnabled,
+                onChanged: alert.setSoundEnabled,
+              ),
+              SwitchListTile(
+                title: const Text('Flashlight'),
+                value: alert.flashEnabled,
+                onChanged: alert.setFlashEnabled,
+              ),
+              SwitchListTile(
+                title: const Text('Vibration'),
+                value: alert.vibrateEnabled,
+                onChanged: alert.setVibrateEnabled,
+              ),
+              ListTile(
+                title: const Text('Temperature threshold'),
+                subtitle: Slider(
+                  value: alert.temperatureThreshold,
+                  min: 20,
+                  max: 40,
+                  divisions: 20,
+                  label: '${alert.temperatureThreshold.toStringAsFixed(1)} °C',
+                  onChanged: alert.setTemperatureThreshold,
+                ),
+                trailing: Text(
+                  '${alert.temperatureThreshold.toStringAsFixed(1)} °C',
+                ),
+              ),
+              ListTile(
+                title: const Text('Distance threshold'),
+                subtitle: Slider(
+                  value: alert.distanceThreshold,
+                  min: 5,
+                  max: 60,
+                  divisions: 22,
+                  label: '${alert.distanceThreshold.toStringAsFixed(1)} cm',
+                  onChanged: alert.setDistanceThreshold,
+                ),
+                trailing: Text(
+                  '${alert.distanceThreshold.toStringAsFixed(1)} cm',
+                ),
+              ),
+              ListTile(
+                title: const Text('Custom alarm sound'),
+                subtitle: Text(
+                  soundPath == 'None selected'
+                      ? soundPath
+                      : _displayName(soundPath),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: FilledButton(
+                  onPressed: () => _pickSoundFile(context),
+                  child: const Text('Select'),
+                ),
+              ),
+              SwitchListTile(
+                title: const Text('Auto-acknowledge alerts'),
+                value: storage.autoAck,
+                onChanged: (value) => storage.autoAck = value,
+              ),
+            ],
           ),
+          const SizedBox(height: 16),
+          _SettingsSection(
+            title: 'Bluetooth',
+            children: [
+              SwitchListTile(
+                title: const Text('Auto-connect last device'),
+                value: storage.autoConnect,
+                onChanged: (value) => storage.autoConnect = value,
+              ),
+              ListTile(
+                title: const Text('Data update rate'),
+                subtitle: Wrap(
+                  spacing: 8,
+                  children: [1, 2, 5].map((seconds) {
+                    final selected = storage.updateRateSec == seconds;
+                    return ChoiceChip(
+                      label: Text('${seconds}s'),
+                      selected: selected,
+                      onSelected: (_) => storage.updateRateSec = seconds,
+                    );
+                  }).toList(),
+                ),
+              ),
+              if (bluetooth.isConnected)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: FilledButton.icon(
+                    onPressed: bluetooth.disconnect,
+                    icon: const Icon(Icons.link_off),
+                    label: const Text('Disconnect'),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _SettingsSection(
+            title: 'Appearance',
+            children: [
+              _buildThemeOption(
+                context: context,
+                mode: ThemeMode.system,
+                selectedMode: storage.themeMode,
+                label: 'System',
+                icon: Icons.phone_iphone,
+                onSelected: (mode) => storage.themeMode = mode,
+              ),
+              _buildThemeOption(
+                context: context,
+                mode: ThemeMode.light,
+                selectedMode: storage.themeMode,
+                label: 'Light',
+                icon: Icons.light_mode,
+                onSelected: (mode) => storage.themeMode = mode,
+              ),
+              _buildThemeOption(
+                context: context,
+                mode: ThemeMode.dark,
+                selectedMode: storage.themeMode,
+                label: 'Dark',
+                icon: Icons.dark_mode,
+                onSelected: (mode) => storage.themeMode = mode,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _SettingsSection(
+            title: 'Data',
+            children: [
+              ListTile(
+                leading: const Icon(Icons.restore),
+                title: const Text('Reset to defaults'),
+                onTap: () => _confirmReset(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const _AboutCard(),
         ],
       ),
     );
@@ -188,13 +209,67 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _pickSoundFile(BuildContext context) async {
+    final alert = context.read<AlertService>();
+    try {
+      final granted = await PermissionService.requestStoragePermission();
+      if (!granted) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Storage permission is required.')),
+          );
+        }
+        return;
+      }
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['mp3', 'wav'],
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) {
+        return;
+      }
+      final file = result.files.first;
+      String? path = file.path;
+      if (path == null && file.bytes != null) {
+        final directory = await getApplicationDocumentsDirectory();
+        final fileName = p.basename(file.name);
+        final savedFile = File(p.join(directory.path, fileName));
+        await savedFile.writeAsBytes(file.bytes!);
+        path = savedFile.path;
+      }
+      if (path != null) {
+        await alert.setSoundFilePath(path);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Alarm sound set to ${_displayName(path)}')),
+          );
+        }
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to select sound: $error')),
+        );
+      }
+    }
+  }
+
+  static String _displayName(String path) {
+    if (path.startsWith('content://')) {
+      final uri = Uri.parse(path);
+      return uri.pathSegments.isNotEmpty ? uri.pathSegments.last : path;
+    }
+    return p.basename(path);
+  }
+
   Future<void> _confirmReset(BuildContext context) async {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Reset settings?'),
         content: const Text(
-            'This will reset theme, alerts, and Bluetooth preferences.'),
+            'This will reset theme, alerts, thresholds, and Bluetooth preferences.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -218,5 +293,60 @@ class SettingsScreen extends StatelessWidget {
         );
       }
     }
+  }
+}
+
+class _SettingsSection extends StatelessWidget {
+  const _SettingsSection({required this.title, required this.children});
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Text(
+                title,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+            const Divider(),
+            ...children,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AboutCard extends StatelessWidget {
+  const _AboutCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: const ListTile(
+        title: Text('Smart Temperature Guard'),
+        subtitle: Text(
+          'Supervisor: Dr. Mary Nsabagwa\n'
+          'Group 28: Wambui Mariam, Johnson Makmot Kabira, Mwesigwa Isaac, '
+          'Bataringaya Bridget, Jonathan Katongole',
+        ),
+        trailing: Icon(Icons.info_outline),
+      ),
+    );
   }
 }
