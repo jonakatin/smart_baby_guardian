@@ -5,7 +5,8 @@ class TorchService {
 
   static final TorchService instance = TorchService._();
 
-  static const MethodChannel _channel = MethodChannel('com.smartbabyguard/torch');
+  static const MethodChannel _channel =
+      MethodChannel('com.smarttemperatureguard/torch');
   bool? _isAvailable;
 
   Future<bool> isTorchAvailable() async {
@@ -13,7 +14,7 @@ class TorchService {
       return _isAvailable!;
     }
     try {
-      final bool? available = await _channel.invokeMethod<bool>('isTorchAvailable');
+      final bool? available = await _channel.invokeMethod<bool>('isAvailable');
       _isAvailable = available ?? false;
     } on PlatformException {
       _isAvailable = false;
